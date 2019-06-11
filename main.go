@@ -131,6 +131,7 @@ func vswhere() (map[string]string, error) {
 var useVs2010 = flag.Bool("2010", false, "use Visual Studio 2010")
 var useVs2013 = flag.Bool("2013", false, "use Visual Studio 2013")
 var useVs2015 = flag.Bool("2015", false, "use Visual Studio 2015")
+var buildDebug = flag.Bool("d", false, "build debug")
 
 func _main() error {
 	flag.Parse()
@@ -139,21 +140,15 @@ func _main() error {
 	if devenv == "" {
 		return errors.New("devenv.com not found")
 	}
-	var command string
 	args := flag.Args()
-	if len(args) > 0 {
-		command = strings.ToLower(args[0])
-		args = args[1:]
-	}
 	sln, err := FindSolution(args)
 	if err != nil {
 		return err
 	}
-	switch command {
-	case "", "release":
-		return devenv.Run(sln, "/rebuild", "Release")
-	case "debug":
+	if *buildDebug {
 		return devenv.Run(sln, "/rebuild", "Debug")
+	} else {
+		return devenv.Run(sln, "/rebuild", "Release")
 	}
 	return nil
 }
