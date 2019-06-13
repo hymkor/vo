@@ -132,6 +132,7 @@ var useVs2010 = flag.Bool("2010", false, "use Visual Studio 2010")
 var useVs2013 = flag.Bool("2013", false, "use Visual Studio 2013")
 var useVs2015 = flag.Bool("2015", false, "use Visual Studio 2015")
 var buildDebug = flag.Bool("d", false, "build debug")
+var buildAll = flag.Bool("a", false, "build all(debug and release)")
 
 func _main() error {
 	flag.Parse()
@@ -145,7 +146,12 @@ func _main() error {
 	if err != nil {
 		return err
 	}
-	if *buildDebug {
+	if *buildAll {
+		if err := devenv.Run(sln, "/rebuild", "Debug"); err != nil {
+			return err
+		}
+		return devenv.Run(sln, "/rebuild", "Release")
+	} else if *buildDebug {
 		return devenv.Run(sln, "/rebuild", "Debug")
 	} else {
 		return devenv.Run(sln, "/rebuild", "Release")
