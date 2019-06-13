@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -89,6 +90,9 @@ func LatestDevEnv() Devenv {
 		devenv, _ := NewDevenv("2010")
 		return devenv
 	}
+	if devenv, err := ProductPath(); err == nil {
+		return Devenv(devenv)
+	}
 	for _, name := range [...]string{"2015", "2013", "2010"} {
 		devenv, err := NewDevenv(name)
 		if err == nil {
@@ -107,25 +111,36 @@ func (devenv Devenv) Run(param ...string) error {
 	return cmd1.Run()
 }
 
-func vswhere() (map[string]string, error) {
-	cmd1 := exec.Command("vswhere")
+const productPath = "productPath: "
+
+func ProductPath() (string, error) {
+	vswhere, err := exec.LookPath("vswhere")
+	if err != nil {
+		return "", err
+	}
+	cmd1 := exec.Command(vswhere)
 	cmd1.Stdin = os.Stdin
 	cmd1.Stderr = os.Stderr
 	in, err := cmd1.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer in.Close()
 	cmd1.Start()
-	result := map[string]string{}
-	for sc := bufio.NewScanner(in); sc.Scan(); {
+	sc := bufio.NewScanner(in)
+	for sc.Scan() {
 		text := sc.Text()
-		field := strings.Split(text, ": ")
-		if len(field) >= 2 {
-			result[field[0]] = field[1]
+		if strings.HasPrefix(text, productPath) {
+			exe := text[len(productPath):]
+			suffix := filepath.Ext(exe)
+			com := exe[:len(exe)-len(suffix)] + ".com"
+			return com, nil
 		}
 	}
-	return result, nil
+	if err := sc.Err(); err != nil {
+		return "", err
+	}
+	return "", io.EOF
 }
 
 var useVs2010 = flag.Bool("2010", false, "use Visual Studio 2010")
