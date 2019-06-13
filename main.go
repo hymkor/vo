@@ -82,7 +82,14 @@ func NewDevenv(ver string) (Devenv, error) {
 
 func LatestDevEnv() Devenv {
 	if *useVs2019 {
-		devenv, err := ProductPath("-version", "16")
+		devenv, err := ProductPath("-version", "[16.0,17.0)")
+		if err != nil {
+			return Devenv("")
+		}
+		return Devenv(devenv)
+	}
+	if *useVs2017 {
+		devenv, err := ProductPath("-version", "[15.0,16.0)")
 		if err != nil {
 			return Devenv("")
 		}
@@ -156,6 +163,7 @@ func ProductPath(args ...string) (string, error) {
 var useVs2010 = flag.Bool("2010", false, "use Visual Studio 2010")
 var useVs2013 = flag.Bool("2013", false, "use Visual Studio 2013")
 var useVs2015 = flag.Bool("2015", false, "use Visual Studio 2015")
+var useVs2017 = flag.Bool("2017", false, "use Visual Studio 2017")
 var useVs2019 = flag.Bool("2019", false, "use Visual Studio 2019")
 var buildDebug = flag.Bool("d", false, "build debug")
 var doRebuild = flag.Bool("r", false, "rebuld")
