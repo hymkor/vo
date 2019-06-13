@@ -130,8 +130,25 @@ func (devenv Devenv) Run(param ...string) error {
 
 const productPath = "productPath: "
 
+func programFiles86() string {
+	if val, ok := os.LookupEnv("ProgramFiles(x86)"); ok {
+		return val
+	}
+	return os.Getenv("ProgramFiles")
+}
+
+func vswherePath() (string, error) {
+	vswhere := filepath.Join(programFiles86(), `Microsoft Visual Studio\Installer\vswhere.exe`)
+	if fd, err := os.Open(vswhere); err == nil {
+		fd.Close()
+		return vswhere, nil
+	} else {
+		return "", err
+	}
+}
+
 func ProductPath(args ...string) (string, error) {
-	vswhere, err := exec.LookPath("vswhere")
+	vswhere, err := vswherePath()
 	if err != nil {
 		return "", err
 	}
