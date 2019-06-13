@@ -56,8 +56,11 @@ func FindSolution(args []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if len(sln) < 1 {
+		return "", errors.New("no solution files")
+	}
 	if len(sln) >= 2 {
-		return "", fmt.Errorf("which solution: %s", strings.Join(sln, ", "))
+		return "", fmt.Errorf("%s: too may solution files", strings.Join(sln, ", "))
 	}
 	return sln[0], nil
 }
