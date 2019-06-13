@@ -124,7 +124,7 @@ func (devenv Devenv) Run(param ...string) error {
 	cmd1.Stdin = os.Stdin
 	cmd1.Stdout = os.Stdout
 	cmd1.Stderr = os.Stderr
-	fmt.Printf("%s %s\n", devenv, strings.Join(param, " "))
+	fmt.Printf("\"%s\" \"%s\"\n", devenv, strings.Join(param, "\" \""))
 	return cmd1.Run()
 }
 
