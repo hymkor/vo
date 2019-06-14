@@ -185,6 +185,7 @@ var useVs2019 = flag.Bool("2019", false, "use Visual Studio 2019")
 var buildDebug = flag.Bool("d", false, "build debug")
 var buildAll = flag.Bool("a", false, "build all(debug and release)")
 var doRebuild = flag.Bool("r", false, "rebuld")
+var openIde = flag.Bool("i", false, "open ide")
 
 func _main() error {
 	flag.Parse()
@@ -197,6 +198,9 @@ func _main() error {
 	sln, err := FindSolution(args)
 	if err != nil {
 		return err
+	}
+	if *openIde {
+		return devenv.Run(sln)
 	}
 	action := "/build"
 	if *doRebuild {
@@ -212,7 +216,6 @@ func _main() error {
 	} else {
 		return devenv.Run(sln, action, "Release")
 	}
-	return nil
 }
 
 func main() {
