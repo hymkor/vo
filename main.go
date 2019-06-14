@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,114 +11,119 @@ import (
 	"strings"
 )
 
-const (
-	ENV_2010 = "VS100COMNTOOLS"
-	ENV_2013 = "VS120COMNTOOLS"
-	ENV_2015 = "VS140COMNTOOLS"
-)
-
-var envs = map[string]string{
-	"2010": ENV_2010,
-	"2013": ENV_2013,
-	"2015": ENV_2015,
-}
-
-func findSolution(args []string) ([]string, error) {
-	result := []string{}
-	for _, name := range args {
-		if strings.HasSuffix(strings.ToLower(name), ".sln") {
-			result = append(result, name)
-		}
-	}
-	if len(result) > 0 {
-		return result, nil
-	}
-	fd, err := os.Open(".")
-	if err != nil {
-		return nil, err
-	}
-	defer fd.Close()
-	files, err := fd.Readdir(-1)
-	if err != nil {
-		return nil, err
-	}
-	for _, file1 := range files {
-		if strings.HasSuffix(strings.ToLower(file1.Name()), ".sln") {
-			result = append(result, file1.Name())
-		}
-	}
-	return result, nil
-}
-
-func FindSolution(args []string) (string, error) {
-	sln, err := findSolution(args)
-	if err != nil {
-		return "", err
-	}
-	if len(sln) < 1 {
-		return "", errors.New("no solution files")
-	}
-	if len(sln) >= 2 {
-		return "", fmt.Errorf("%s: too may solution files", strings.Join(sln, ", "))
-	}
-	return sln[0], nil
-}
-
-type Devenv string
-
-func NewDevenv(ver string) (Devenv, error) {
-	name := envs[ver]
-	if name == "" {
-		return Devenv(""), fmt.Errorf("%s not found", name)
-	}
-	env := os.Getenv(name)
+func envToCom(envname string) (string, error) {
+	env := os.Getenv(envname)
 	if env == "" {
-		return Devenv(""), fmt.Errorf("%s not found", name)
+		return "", fmt.Errorf("%%%s%% not set", envname)
 	}
 	env = strings.ReplaceAll(env, "Tools", "IDE")
-	return Devenv(filepath.Join(env, "devenv.com")), nil
+	com := filepath.Join(env, "devenv.com")
+	if fd, err := os.Open(com); err == nil {
+		fd.Close()
+		return com, nil
+	}
+	return "", fmt.Errorf("%s not found", com)
 }
 
-func LatestDevEnv() Devenv {
+func seek2010() (string, error) {
+	return envToCom("VS100COMNTOOLS")
+}
+
+func seek2013() (string, error) {
+	return envToCom("VS120COMNTOOLS")
+}
+
+func seek2015() (string, error) {
+	return envToCom("VS140COMNTOOLS")
+}
+
+func seek2017() (string, error) {
+	return ProductPath("-version", "[15.0,16.0)")
+}
+
+func seek2019() (string, error) {
+	return ProductPath("-version", "[16.0,17.0)")
+}
+
+func seekLatest() (string, error) {
+	return ProductPath("-latest")
+}
+
+var versionToSeekfunc = map[string]func() (string, error){
+	"2010": seek2010,
+	"2013": seek2013,
+	"2015": seek2015,
+	"2017": seek2017,
+	"2019": seek2019,
+}
+
+var searchList = []func() (string, error){
+	seekLatest,
+	seek2015,
+	seek2013,
+	seek2010,
+}
+
+var useVs2010 = flag.Bool("2010", false, "use Visual Studio 2010")
+var useVs2013 = flag.Bool("2013", false, "use Visual Studio 2013")
+var useVs2015 = flag.Bool("2015", false, "use Visual Studio 2015")
+var useVs2017 = flag.Bool("2017", false, "use Visual Studio 2017")
+var useVs2019 = flag.Bool("2019", false, "use Visual Studio 2019")
+
+func seekDevenv(solutionFile string, log io.Writer) (compath string, err error) {
+	// option to force
 	if *useVs2019 {
-		devenv, err := ProductPath("-version", "[16.0,17.0)")
-		if err != nil {
-			return Devenv("")
-		}
-		return Devenv(devenv)
+		compath, err = seek2019()
 	}
 	if *useVs2017 {
-		devenv, err := ProductPath("-version", "[15.0,16.0)")
-		if err != nil {
-			return Devenv("")
-		}
-		return Devenv(devenv)
+		compath, err = seek2017()
 	}
 	if *useVs2015 {
-		devenv, _ := NewDevenv("2015")
-		return devenv
+		compath, err = seek2015()
 	}
 	if *useVs2013 {
-		devenv, _ := NewDevenv("2013")
-		return devenv
+		compath, err = seek2013()
 	}
 	if *useVs2010 {
-		devenv, _ := NewDevenv("2010")
-		return devenv
+		compath, err = seek2010()
 	}
-	if devenv, err := ProductPath("-latest"); err == nil {
-		return Devenv(devenv)
+	if err == nil && compath != "" {
+		return
 	}
-	for _, name := range [...]string{"2015", "2013", "2010"} {
-		devenv, err := NewDevenv(name)
-		if err == nil {
-			return devenv
+	if err != nil {
+		fmt.Fprintln(log, err)
+	}
+
+	// solution files
+	var ver string
+	ver, err = findVersionInSolution(solutionFile)
+	if err == nil && ver != "" {
+		if f := versionToSeekfunc[ver]; f != nil {
+			fmt.Fprintf(log, "%s: word '%s' found.\n", solutionFile, ver)
+			compath, err = f()
+			if compath != "" && err == nil {
+				return
+			}
+			if err != nil {
+				fmt.Fprintln(log, err)
+			}
 		}
 	}
-	return ""
+
+	// latest version
+	for _, f := range searchList {
+		compath, err = f()
+		if compath != "" && err == nil {
+			return
+		}
+		if err != nil {
+			fmt.Fprintln(log, err)
+		}
+	}
+	return "", io.EOF
 }
 
-func (devenv Devenv) Run(param ...string) error {
+func run(devenv string, param ...string) error {
 	cmd1 := exec.Command(string(devenv), param...)
 	cmd1.Stdin = os.Stdin
 	cmd1.Stdout = os.Stdout
@@ -128,60 +132,6 @@ func (devenv Devenv) Run(param ...string) error {
 	return cmd1.Run()
 }
 
-const productPath = "productPath: "
-
-func programFiles86() string {
-	if val, ok := os.LookupEnv("ProgramFiles(x86)"); ok {
-		return val
-	}
-	return os.Getenv("ProgramFiles")
-}
-
-func vswherePath() (string, error) {
-	vswhere := filepath.Join(programFiles86(), `Microsoft Visual Studio\Installer\vswhere.exe`)
-	if fd, err := os.Open(vswhere); err == nil {
-		fd.Close()
-		return vswhere, nil
-	} else {
-		return "", err
-	}
-}
-
-func ProductPath(args ...string) (string, error) {
-	vswhere, err := vswherePath()
-	if err != nil {
-		return "", err
-	}
-	cmd1 := exec.Command(vswhere, args...)
-	cmd1.Stdin = os.Stdin
-	cmd1.Stderr = os.Stderr
-	in, err := cmd1.StdoutPipe()
-	if err != nil {
-		return "", err
-	}
-	defer in.Close()
-	cmd1.Start()
-	sc := bufio.NewScanner(in)
-	for sc.Scan() {
-		text := sc.Text()
-		if strings.HasPrefix(text, productPath) {
-			exe := text[len(productPath):]
-			suffix := filepath.Ext(exe)
-			com := exe[:len(exe)-len(suffix)] + ".com"
-			return com, nil
-		}
-	}
-	if err := sc.Err(); err != nil {
-		return "", err
-	}
-	return "", io.EOF
-}
-
-var useVs2010 = flag.Bool("2010", false, "use Visual Studio 2010")
-var useVs2013 = flag.Bool("2013", false, "use Visual Studio 2013")
-var useVs2015 = flag.Bool("2015", false, "use Visual Studio 2015")
-var useVs2017 = flag.Bool("2017", false, "use Visual Studio 2017")
-var useVs2019 = flag.Bool("2019", false, "use Visual Studio 2019")
 var buildDebug = flag.Bool("d", false, "build debug")
 var buildAll = flag.Bool("a", false, "build all(debug and release)")
 var doRebuild = flag.Bool("r", false, "rebuld")
@@ -190,31 +140,33 @@ var openIde = flag.Bool("i", false, "open ide")
 func _main() error {
 	flag.Parse()
 
-	devenv := LatestDevEnv()
-	if devenv == "" {
-		return errors.New("devenv.com not found")
-	}
 	args := flag.Args()
 	sln, err := FindSolution(args)
 	if err != nil {
 		return err
 	}
+
+	devenv, err := seekDevenv(sln, os.Stderr)
+	if devenv == "" || err != nil {
+		return errors.New("devenv.com not found")
+	}
+
 	if *openIde {
-		return devenv.Run(sln)
+		return run(devenv, sln)
 	}
 	action := "/build"
 	if *doRebuild {
 		action = "/rebuild"
 	}
 	if *buildAll {
-		if err := devenv.Run(sln, action, "Debug"); err != nil {
+		if err := run(devenv, sln, action, "Debug"); err != nil {
 			return err
 		}
-		return devenv.Run(sln, action, "Release")
+		return run(devenv, sln, action, "Release")
 	} else if *buildDebug {
-		return devenv.Run(sln, action, "Debug")
+		return run(devenv, sln, action, "Debug")
 	} else {
-		return devenv.Run(sln, action, "Release")
+		return run(devenv, sln, action, "Release")
 	}
 }
 
