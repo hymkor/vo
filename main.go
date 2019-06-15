@@ -128,11 +128,11 @@ func run(devenv string, param ...string) error {
 	return cmd1.Run()
 }
 
-var flagDebug = flag.Bool("d", false, "build debug")
-var flagAll = flag.Bool("a", false, "build all(debug and release)")
-var flagRebuild = flag.Bool("r", false, "rebuld")
+var flagDebug = flag.Bool("d", false, "build configurations contains /Debug/")
+var flagAll = flag.Bool("a", false, "build all configurations")
+var flagRebuild = flag.Bool("r", false, "rebuild")
 var flagIde = flag.Bool("i", false, "open ide")
-var flagConfig = flag.String("c", "", "configuration(Release,Debug..)")
+var flagConfig = flag.String("c", "", "specify the configuraion to build")
 
 func _main() error {
 	flag.Parse()
