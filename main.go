@@ -70,7 +70,7 @@ var useVs2015 = flag.Bool("2015", false, "use Visual Studio 2015")
 var useVs2017 = flag.Bool("2017", false, "use Visual Studio 2017")
 var useVs2019 = flag.Bool("2019", false, "use Visual Studio 2019")
 
-func seekDevenv(solutionFile string, log io.Writer) (compath string, err error) {
+func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 	// option to force
 	if *useVs2019 {
 		compath, err = seek2019()
@@ -95,18 +95,14 @@ func seekDevenv(solutionFile string, log io.Writer) (compath string, err error) 
 	}
 
 	// solution files
-	var ver string
-	ver, err = findVersionInSolution(solutionFile)
-	if err == nil && ver != "" {
-		if f := versionToSeekfunc[ver]; f != nil {
-			fmt.Fprintf(log, "%s: word '%s' found.\n", solutionFile, ver)
-			compath, err = f()
-			if compath != "" && err == nil {
-				return
-			}
-			if err != nil {
-				fmt.Fprintln(log, err)
-			}
+	if f := versionToSeekfunc[sln.Version]; f != nil {
+		fmt.Fprintf(log, "%s: word '%s' found.\n", sln.Path, sln.Version)
+		compath, err = f()
+		if compath != "" && err == nil {
+			return
+		}
+		if err != nil {
+			fmt.Fprintln(log, err)
 		}
 	}
 
@@ -142,35 +138,47 @@ func _main() error {
 	flag.Parse()
 
 	args := flag.Args()
-	sln, err := FindSolution(args)
+	slnPath, err := FindSolution(args)
 	if err != nil {
 		return err
 	}
 
+	sln, err := NewSolution(slnPath)
+	if err != nil {
+		return err
+	}
 	devenv, err := seekDevenv(sln, os.Stderr)
-	if devenv == "" || err != nil {
+	if err != nil {
 		return errors.New("devenv.com not found")
 	}
 
 	if *openIde {
-		return run(devenv, sln)
+		return run(devenv, slnPath)
 	}
 	action := "/build"
 	if *doRebuild {
 		action = "/rebuild"
 	}
 	if *flagConfig != "" {
-		return run(devenv, sln, action, *flagConfig)
-	} else if *buildAll {
-		if err := run(devenv, sln, action, "Debug"); err != nil {
-			return err
-		}
-		return run(devenv, sln, action, "Release")
-	} else if *buildDebug {
-		return run(devenv, sln, action, "Debug")
-	} else {
-		return run(devenv, sln, action, "Release")
+		return run(devenv, slnPath, action, *flagConfig)
 	}
+
+	filter := func(c string) bool { return strings.Contains(c, "release") }
+
+	if *buildAll {
+		filter = func(c string) bool { return true }
+	} else if *buildDebug {
+		filter = func(c string) bool { return strings.Contains(c, "debug") }
+	}
+
+	for _, conf := range sln.Configuration {
+		if filter(strings.ToLower(conf)) {
+			if err := run(devenv, slnPath, action, conf); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func main() {

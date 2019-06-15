@@ -4,9 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"os"
-	"regexp"
 	"strings"
 )
 
@@ -51,21 +49,40 @@ func FindSolution(args []string) (string, error) {
 	return sln[0], nil
 }
 
-var visualStudioPattern = regexp.MustCompile(`^#\s*Visual\s*Studio\s*(2\d{3})\s*$`)
+type Solution struct {
+	Path          string
+	Version       string
+	Configuration []string
+}
 
-func findVersionInSolution(fname string) (string, error) {
+func NewSolution(fname string) (*Solution, error) {
 	fd, err := os.Open(fname)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer fd.Close()
-	sc := bufio.NewScanner(fd)
-	for sc.Scan() {
-		text := sc.Text()
-		m := visualStudioPattern.FindStringSubmatch(text)
-		if m != nil {
-			return m[1], nil
+
+	sln := &Solution{Path: fname}
+
+	var block func([]string)
+	block = func(f []string) {
+		if f[0] == "#" && f[1] == "Visual" && f[2] == "Studio" && len(f) >= 4 {
+			sln.Version = f[3]
+		} else if f[0] == "GlobalSection(SolutionConfigurationPlatforms)" {
+			save := block
+			block = func(f []string) {
+				if f[0] == "EndGlobalSection" {
+					block = save
+				} else {
+					sln.Configuration = append(sln.Configuration, f[0])
+				}
+			}
 		}
 	}
-	return "", io.EOF
+
+	sc := bufio.NewScanner(fd)
+	for sc.Scan() {
+		block(strings.Fields(sc.Text()))
+	}
+	return sln, nil
 }
