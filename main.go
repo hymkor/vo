@@ -64,27 +64,27 @@ var searchList = []func() (string, error){
 	seek2010,
 }
 
-var useVs2010 = flag.Bool("2010", false, "use Visual Studio 2010")
-var useVs2013 = flag.Bool("2013", false, "use Visual Studio 2013")
-var useVs2015 = flag.Bool("2015", false, "use Visual Studio 2015")
-var useVs2017 = flag.Bool("2017", false, "use Visual Studio 2017")
-var useVs2019 = flag.Bool("2019", false, "use Visual Studio 2019")
+var flag2010 = flag.Bool("2010", false, "use Visual Studio 2010")
+var flag2013 = flag.Bool("2013", false, "use Visual Studio 2013")
+var flag2015 = flag.Bool("2015", false, "use Visual Studio 2015")
+var flag2017 = flag.Bool("2017", false, "use Visual Studio 2017")
+var flag2019 = flag.Bool("2019", false, "use Visual Studio 2019")
 
 func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 	// option to force
-	if *useVs2019 {
+	if *flag2019 {
 		compath, err = seek2019()
 	}
-	if *useVs2017 {
+	if *flag2017 {
 		compath, err = seek2017()
 	}
-	if *useVs2015 {
+	if *flag2015 {
 		compath, err = seek2015()
 	}
-	if *useVs2013 {
+	if *flag2013 {
 		compath, err = seek2013()
 	}
-	if *useVs2010 {
+	if *flag2010 {
 		compath, err = seek2010()
 	}
 	if err == nil && compath != "" {
@@ -128,10 +128,10 @@ func run(devenv string, param ...string) error {
 	return cmd1.Run()
 }
 
-var buildDebug = flag.Bool("d", false, "build debug")
-var buildAll = flag.Bool("a", false, "build all(debug and release)")
-var doRebuild = flag.Bool("r", false, "rebuld")
-var openIde = flag.Bool("i", false, "open ide")
+var flagDebug = flag.Bool("d", false, "build debug")
+var flagAll = flag.Bool("a", false, "build all(debug and release)")
+var flagRebuild = flag.Bool("r", false, "rebuld")
+var flagIde = flag.Bool("i", false, "open ide")
 var flagConfig = flag.String("c", "", "configuration(Release,Debug..)")
 
 func _main() error {
@@ -152,11 +152,11 @@ func _main() error {
 		return errors.New("devenv.com not found")
 	}
 
-	if *openIde {
+	if *flagIde {
 		return run(devenv, slnPath)
 	}
 	action := "/build"
-	if *doRebuild {
+	if *flagRebuild {
 		action = "/rebuild"
 	}
 	if *flagConfig != "" {
@@ -165,9 +165,9 @@ func _main() error {
 
 	filter := func(c string) bool { return strings.Contains(c, "release") }
 
-	if *buildAll {
+	if *flagAll {
 		filter = func(c string) bool { return true }
-	} else if *buildDebug {
+	} else if *flagDebug {
 		filter = func(c string) bool { return strings.Contains(c, "debug") }
 	}
 
