@@ -136,6 +136,7 @@ var buildDebug = flag.Bool("d", false, "build debug")
 var buildAll = flag.Bool("a", false, "build all(debug and release)")
 var doRebuild = flag.Bool("r", false, "rebuld")
 var openIde = flag.Bool("i", false, "open ide")
+var flagConfig = flag.String("c", "", "configuration(Release,Debug..)")
 
 func _main() error {
 	flag.Parse()
@@ -158,7 +159,9 @@ func _main() error {
 	if *doRebuild {
 		action = "/rebuild"
 	}
-	if *buildAll {
+	if *flagConfig != "" {
+		return run(devenv, sln, action, *flagConfig)
+	} else if *buildAll {
 		if err := run(devenv, sln, action, "Debug"); err != nil {
 			return err
 		}
