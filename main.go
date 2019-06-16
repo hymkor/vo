@@ -134,6 +134,7 @@ func run(devenv string, param ...string) error {
 	return cmd1.Run()
 }
 
+var flagListProduct = flag.Bool("ls", false, "list products")
 var flagDryRun = flag.Bool("n", false, "dry run")
 var flagDebug = flag.Bool("d", false, "build configurations contains /Debug/")
 var flagAll = flag.Bool("a", false, "build all configurations")
@@ -153,6 +154,9 @@ func _main() error {
 	sln, err := NewSolution(slnPath)
 	if err != nil {
 		return err
+	}
+	if *flagListProduct {
+		return listProduct(sln)
 	}
 	devenv, err := seekDevenv(sln, os.Stderr)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -53,7 +54,15 @@ type Solution struct {
 	Path          string
 	Version       string
 	Configuration []string
+	Project       map[string]string
 }
+
+var rxProjectList = regexp.MustCompile(
+	`^Project\([^)]+\)` +
+		`\s*=\s*` +
+		`"[^"]+"\s*,\s*` +
+		`"([^"]+)"\s*,\s*` +
+		`"([^"]+)"`)
 
 func NewSolution(fname string) (*Solution, error) {
 	fd, err := os.Open(fname)
@@ -62,15 +71,27 @@ func NewSolution(fname string) (*Solution, error) {
 	}
 	defer fd.Close()
 
-	sln := &Solution{Path: fname}
+	sln := &Solution{
+		Path:    fname,
+		Project: make(map[string]string),
+	}
 
-	var block func([]string)
-	block = func(f []string) {
+	var block func(string, []string)
+	block = func(line string, f []string) {
 		if f[0] == "#" && f[1] == "Visual" && f[2] == "Studio" && len(f) >= 4 {
 			sln.Version = f[3]
+		} else if m := rxProjectList.FindStringSubmatch(line); m != nil {
+			//println("Found: ", m[1], " ", m[2])
+			sln.Project[m[1]] = m[2]
+			save := block
+			block = func(line string, f []string) {
+				if f[0] == "EndProject" {
+					block = save
+				}
+			}
 		} else if f[0] == "GlobalSection(SolutionConfigurationPlatforms)" {
 			save := block
-			block = func(f []string) {
+			block = func(line string, f []string) {
 				if f[0] == "EndGlobalSection" {
 					block = save
 				} else {
@@ -82,7 +103,8 @@ func NewSolution(fname string) (*Solution, error) {
 
 	sc := bufio.NewScanner(fd)
 	for sc.Scan() {
-		block(strings.Fields(sc.Text()))
+		text := sc.Text()
+		block(text, strings.Fields(text))
 	}
 	return sln, nil
 }
