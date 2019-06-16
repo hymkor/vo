@@ -14,7 +14,7 @@ import (
 func envToCom(envname string) (string, error) {
 	env := os.Getenv(envname)
 	if env == "" {
-		return "", fmt.Errorf("%%%s%% not set", envname)
+		return "", fmt.Errorf("%%%s%% is not set.", envname)
 	}
 	env = strings.ReplaceAll(env, "Tools", "IDE")
 	com := filepath.Join(env, "devenv.com")
@@ -92,6 +92,7 @@ func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 	}
 	if err != nil {
 		fmt.Fprintln(log, err)
+		fmt.Fprintln(log, "look for the other Visual Studio.")
 	}
 
 	// solution files
@@ -103,6 +104,7 @@ func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 		}
 		if err != nil {
 			fmt.Fprintln(log, err)
+			fmt.Fprintln(log, "look for other versions of Visual Studio.")
 		}
 	}
 
@@ -110,6 +112,7 @@ func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 	for _, f := range searchList {
 		compath, err = f()
 		if compath != "" && err == nil {
+			fmt.Fprintf(log, "found '%s'\n", compath)
 			return
 		}
 		if err != nil {
