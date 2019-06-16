@@ -1,13 +1,26 @@
 vf1s - Visual Studio Commandline Client
 =======================================
 
-Search devenv.com's fullpath and call it.
+Look for devenv.com and call it to build a product.
 
 - for 2010, see `%VS100COMNTOOLS%`
 - for 2013, see `%VS120COMNTOOLS%`
 - for 2015, see `%VS140COMNTOOLS%`
 - for 2017, call `vswhere -version [15.0,16.0)`
 - for 2019, call `vswhere -version [16.0,17.0)`
+
+```
+$ vf1s.exe
+WorkReport.sln: word '2010' found.
+%VS100COMNTOOLS% is not set.
+look for other versions of Visual Studio.
+found 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.com'
+"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.com" "WorkReport.sln" "/build" "Release|x86"
+
+Microsoft Visual Studio 2019 RC バージョン 16.0.29009.5。
+Copyright (C) Microsoft Corp. All rights reserved.
+========== ビルド: 0 正常終了、0 失敗、1 更新不要、0 スキップ ==========
+```
 
 ```
 Usage:
