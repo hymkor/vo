@@ -128,9 +128,13 @@ func run(devenv string, param ...string) error {
 	cmd1.Stdout = os.Stdout
 	cmd1.Stderr = os.Stderr
 	fmt.Printf("\"%s\" \"%s\"\n", devenv, strings.Join(param, "\" \""))
+	if *flagDryRun {
+		return nil
+	}
 	return cmd1.Run()
 }
 
+var flagDryRun = flag.Bool("n", false, "dry run")
 var flagDebug = flag.Bool("d", false, "build configurations contains /Debug/")
 var flagAll = flag.Bool("a", false, "build all configurations")
 var flagRebuild = flag.Bool("r", false, "rebuild")
