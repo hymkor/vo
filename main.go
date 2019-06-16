@@ -137,8 +137,9 @@ func run(devenv string, param ...string) error {
 var flagListProduct = flag.Bool("ls", false, "list products")
 var flagDryRun = flag.Bool("n", false, "dry run")
 var flagDebug = flag.Bool("d", false, "build configurations contains /Debug/")
+var flagRelease = flag.Bool("r", false, "build configurations contains /Release/")
 var flagAll = flag.Bool("a", false, "build all configurations")
-var flagRebuild = flag.Bool("r", false, "rebuild")
+var flagRebuild = flag.Bool("re", false, "rebuild")
 var flagIde = flag.Bool("i", false, "open ide")
 var flagConfig = flag.String("c", "", "specify the configuraion to build")
 
@@ -174,12 +175,16 @@ func _main() error {
 		return run(devenv, slnPath, action, *flagConfig)
 	}
 
-	filter := func(c string) bool { return strings.Contains(c, "release") }
-
+	var filter func(string) bool
 	if *flagAll {
 		filter = func(c string) bool { return true }
 	} else if *flagDebug {
 		filter = func(c string) bool { return strings.Contains(c, "debug") }
+	} else if *flagRelease {
+		filter = func(c string) bool { return strings.Contains(c, "release") }
+	} else {
+		flag.PrintDefaults()
+		return nil
 	}
 
 	for _, conf := range sln.Configuration {
