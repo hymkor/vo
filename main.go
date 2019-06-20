@@ -134,14 +134,17 @@ func run(devenv string, param ...string) error {
 	return cmd1.Run()
 }
 
-var flagListProduct = flag.Bool("ls", false, "list products")
-var flagDryRun = flag.Bool("n", false, "dry run")
-var flagDebug = flag.Bool("d", false, "build configurations contains /Debug/")
-var flagRelease = flag.Bool("r", false, "build configurations contains /Release/")
-var flagAll = flag.Bool("a", false, "build all configurations")
-var flagRebuild = flag.Bool("re", false, "rebuild")
-var flagIde = flag.Bool("i", false, "open ide")
-var flagConfig = flag.String("c", "", "specify the configuraion to build")
+var (
+	flagListProductInline = flag.Bool("ls", false, "list products")
+	flagListProductLong   = flag.Bool("ll", false, "list products")
+	flagDryRun            = flag.Bool("n", false, "dry run")
+	flagDebug             = flag.Bool("d", false, "build configurations contains /Debug/")
+	flagRelease           = flag.Bool("r", false, "build configurations contains /Release/")
+	flagAll               = flag.Bool("a", false, "build all configurations")
+	flagRebuild           = flag.Bool("re", false, "rebuild")
+	flagIde               = flag.Bool("i", false, "open ide")
+	flagConfig            = flag.String("c", "", "specify the configuraion to build")
+)
 
 func _main() error {
 	flag.Parse()
@@ -156,9 +159,13 @@ func _main() error {
 	if err != nil {
 		return err
 	}
-	if *flagListProduct {
-		return listProduct(sln)
+	if *flagListProductInline {
+		return listProductInline(sln)
 	}
+	if *flagListProductLong {
+		return listProductLong(sln)
+	}
+
 	devenv, err := seekDevenv(sln, os.Stderr)
 	if err != nil {
 		return errors.New("devenv.com not found")

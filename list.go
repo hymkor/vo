@@ -121,16 +121,27 @@ func listupProduct(sln *Solution) ([]string, error) {
 	return result, nil
 }
 
-func listProduct(sln *Solution) error {
+func listProductInline(sln *Solution) error {
 	list, err := listupProduct(sln)
 	if err != nil {
 		return err
 	}
-	for i, s := range list {
-		if i > 0 {
-			fmt.Print("\t")
-		}
-		fmt.Printf(`"%s"`, s)
+	ofs := ""
+	for _, s := range list {
+		fmt.Printf(`%s"%s"`, ofs, s)
+		ofs = "\t"
+	}
+	fmt.Println()
+	return nil
+}
+
+func listProductLong(sln *Solution) error {
+	list, err := listupProduct(sln)
+	if err != nil {
+		return err
+	}
+	for _, s := range list {
+		fmt.Println(s)
 	}
 	return nil
 }
