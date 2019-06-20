@@ -53,20 +53,21 @@ func cond2replacer(cond string) *strings.Replacer {
 	return strings.NewReplacer(table...)
 }
 
-func listProduct(sln *Solution) error {
+func listupProduct(sln *Solution) ([]string, error) {
+	result := []string{}
 	for _projPath := range sln.Project {
 		projPath := filepath.Join(filepath.Dir(sln.Path), _projPath)
 		basedir := filepath.Dir(projPath)
 
 		bin, err := ioutil.ReadFile(projPath)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if strings.HasSuffix(_projPath, ".vcxproj") {
 			vcp := NativeProj{}
 			err = xml.Unmarshal(bin, &vcp)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			rootNameSpace := filepath.Base(_projPath)
@@ -92,9 +93,7 @@ func listProduct(sln *Solution) error {
 					} else {
 						suffix = ".exe"
 					}
-					fmt.Println(filepath.Join(basedir,
-						outputPath,
-						rootNameSpace+suffix))
+					result = append(result, filepath.Join(basedir, outputPath, rootNameSpace+suffix))
 				}
 			}
 		} else if strings.HasSuffix(_projPath, ".vbproj") ||
@@ -103,7 +102,7 @@ func listProduct(sln *Solution) error {
 			vbp := NetProj{}
 			err = xml.Unmarshal(bin, &vbp)
 			if err != nil {
-				return err
+				return nil, err
 			}
 			filename := vbp.AssemblyName
 			if vbp.OutputType == dotNetDLLType {
@@ -113,11 +112,25 @@ func listProduct(sln *Solution) error {
 			}
 
 			for _, dir := range vbp.OutputPath {
-				fmt.Println(filepath.Join(basedir, dir, filename))
+				result = append(result, filepath.Join(basedir, dir, filename))
 			}
 		} else {
 			continue
 		}
+	}
+	return result, nil
+}
+
+func listProduct(sln *Solution) error {
+	list, err := listupProduct(sln)
+	if err != nil {
+		return err
+	}
+	for i, s := range list {
+		if i > 0 {
+			fmt.Print("\t")
+		}
+		fmt.Printf(`"%s"`, s)
 	}
 	return nil
 }
