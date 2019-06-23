@@ -2,13 +2,12 @@ package main
 
 import (
 	"errors"
-	"syscall"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
 )
 
-var versionDll = syscall.NewLazyDLL("version")
+var versionDll = windows.NewLazyDLL("version")
 var procGetFileVersionInfoSize = versionDll.NewProc("GetFileVersionInfoSizeW")
 var procGetFileVersionInfo = versionDll.NewProc("GetFileVersionInfoW")
 var procVerQueryValue = versionDll.NewProc("VerQueryValueW")
@@ -43,8 +42,8 @@ type versionInfo struct {
 	fname  *uint16
 }
 
-func gerVersionInfo(fname string) (*versionInfo, error) {
-	_fname, err := syscall.UTF16PtrFromString(fname)
+func GetVersionInfo(fname string) (*versionInfo, error) {
+	_fname, err := windows.UTF16PtrFromString(fname)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +80,7 @@ func gerVersionInfo(fname string) (*versionInfo, error) {
 }
 
 func (vi *versionInfo) query(key string, f uintptr) (uintptr, error) {
-	subBlock, err := syscall.UTF16PtrFromString(key)
+	subBlock, err := windows.UTF16PtrFromString(key)
 	if err != nil {
 		return 0, err
 	}
@@ -115,33 +114,4 @@ func (vi *versionInfo) Number() (file []uint, product []uint, err error) {
 			lower16bit(f.ProductVersionLS),
 		},
 		nil
-}
-
-func (vi *versionInfo) Translation() (uint32, uint32) {
-	var pLangCode *uint32
-	vi.query(`\VarFileInfo\Translation`, uintptr(unsafe.Pointer(&pLangCode)))
-	return *pLangCode, *(*uint32)(unsafe.Pointer(uintptr(unsafe.Pointer(pLangCode)) + unsafe.Sizeof(*pLangCode)))
-}
-
-func utf16PtrToArray(p uintptr, size uintptr) []uint16 {
-	buffer := make([]uint16, 0, size)
-	for size > 0 {
-		ch := *(*uint16)(unsafe.Pointer(p))
-		if ch == 0 {
-			break
-		}
-		buffer = append(buffer, ch)
-		p += unsafe.Sizeof(uint16(0))
-	}
-	return buffer
-}
-
-func (vi *versionInfo) Item(key string) string {
-	var pStrInfo *uint16
-	length, _ := vi.query(key, uintptr(unsafe.Pointer(&pStrInfo)))
-	if length <= 0 {
-		return ""
-	}
-	utf16array := utf16PtrToArray(uintptr(unsafe.Pointer(pStrInfo)), length)
-	return windows.UTF16ToString(utf16array)
 }

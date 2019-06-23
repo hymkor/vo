@@ -207,7 +207,7 @@ func getExeSpec(fname string) *exeSpec {
 	var fileVer string
 	var prodVer string
 
-	if v, err := gerVersionInfo(fname); err == nil {
+	if v, err := GetVersionInfo(fname); err == nil {
 		if fv, pv, err := v.Number(); err == nil {
 			fileVer = fmt.Sprintf("%d.%d.%d.%d", fv[0], fv[1], fv[2], fv[3])
 			prodVer = fmt.Sprintf("%d.%d.%d.%d", pv[0], pv[1], pv[2], pv[3])
