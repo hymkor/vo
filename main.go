@@ -135,6 +135,7 @@ func run(devenv string, param ...string) error {
 }
 
 var (
+	flagShowVer           = flag.String("showver", "", "show version")
 	flagListProductInline = flag.Bool("ls", false, "list products")
 	flagListProductLong   = flag.Bool("ll", false, "list products")
 	flagDryRun            = flag.Bool("n", false, "dry run")
@@ -150,6 +151,12 @@ func _main() error {
 	flag.Parse()
 
 	args := flag.Args()
+
+	if *flagShowVer != "" {
+		showVer(*flagShowVer, os.Stdout)
+		return nil
+	}
+
 	slnPath, err := FindSolution(args)
 	if err != nil {
 		return err

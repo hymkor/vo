@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/xml"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -137,25 +139,29 @@ func listProductInline(sln *Solution) error {
 	return nil
 }
 
+func showVer(fname string, w io.Writer) {
+	fmt.Fprintln(w, fname)
+	if spec := peinfo.New(fname); spec != nil {
+		var bit string
+		if spec.Is64bit {
+			bit = " (64)"
+		}
+		fmt.Fprintf(w, "\t%-18s%-18s%-18s%s\n",
+			spec.FileVersion,
+			spec.ProductVersion,
+			spec.Stamp.Format("2006-01-02 15:04:05"),
+			bit)
+		fmt.Fprintf(w, "\t%d bytes  md5sum:%s\n", spec.Size, spec.Md5Sum)
+	}
+}
+
 func listProductLong(sln *Solution) error {
 	list, err := listupProduct(sln)
 	if err != nil {
 		return err
 	}
 	for _, fname := range list {
-		fmt.Println(fname)
-		if spec := peinfo.New(fname); spec != nil {
-			var bit string
-			if spec.Is64bit {
-				bit = " (64)"
-			}
-			fmt.Printf("\t%-18s%-18s%-18s%s\n",
-				spec.FileVersion,
-				spec.ProductVersion,
-				spec.Stamp.Format("2006-01-02 15:04:05"),
-				bit)
-			fmt.Printf("\t%d bytes  md5sum:%s\n", spec.Size, spec.Md5Sum)
-		}
+		showVer(fname, os.Stdout)
 	}
 	return nil
 }
