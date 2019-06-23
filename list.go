@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/md5"
+	"debug/pe"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -139,6 +140,16 @@ func listProductInline(sln *Solution) error {
 	return nil
 }
 
+func is64bit(r io.ReaderAt) (bool, error) {
+	file, err := pe.NewFile(r)
+	if err != nil {
+		return false, err
+	}
+	_, ok := file.OptionalHeader.(*pe.OptionalHeader64)
+	file.Close()
+	return ok, nil
+}
+
 type exeSpec struct {
 	Name           string
 	Md5Sum         string
@@ -146,6 +157,7 @@ type exeSpec struct {
 	ProductVersion string
 	Size           int64
 	Stamp          time.Time
+	Is64bit        bool
 }
 
 func getExeSpec(fname string) *exeSpec {
@@ -178,6 +190,8 @@ func getExeSpec(fname string) *exeSpec {
 
 	stamp, _ := GetPEStamp(fd)
 
+	is64bitFlag, _ := is64bit(fd)
+
 	return &exeSpec{
 		Name:           fname,
 		Md5Sum:         fmt.Sprintf("%x", h.Sum(nil)),
@@ -185,6 +199,7 @@ func getExeSpec(fname string) *exeSpec {
 		ProductVersion: prodVer,
 		Size:           size,
 		Stamp:          stamp,
+		Is64bit:        is64bitFlag,
 	}
 }
 
@@ -196,10 +211,15 @@ func listProductLong(sln *Solution) error {
 	for _, fname := range list {
 		fmt.Println(fname)
 		if spec := getExeSpec(fname); spec != nil {
-			fmt.Printf("\t%-18s%-18s%-18s\n",
+			var bit string
+			if spec.Is64bit {
+				bit = " (64)"
+			}
+			fmt.Printf("\t%-18s%-18s%-18s%s\n",
 				spec.FileVersion,
 				spec.ProductVersion,
-				spec.Stamp.Format("2006-01-02 15:04:05"))
+				spec.Stamp.Format("2006-01-02 15:04:05"),
+				bit)
 			fmt.Printf("\t%d bytes  md5sum:%s\n", spec.Size, spec.Md5Sum)
 		}
 	}
