@@ -1,9 +1,12 @@
 package main
 
 import (
+	"crypto/md5"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -135,13 +138,62 @@ func listProductInline(sln *Solution) error {
 	return nil
 }
 
+type exeSpec struct {
+	Name           string
+	Md5Sum         string
+	FileVersion    string
+	ProductVersion string
+	Size           int64
+}
+
+func getExeSpec(fname string) *exeSpec {
+	fd, err := os.Open(fname)
+	if err != nil {
+		return nil
+	}
+	defer fd.Close()
+
+	var size int64
+
+	if stat, err := fd.Stat(); err == nil {
+		size = stat.Size()
+	}
+
+	var fileVer string
+	var prodVer string
+
+	if v, err := gerVersionInfo(fname); err == nil {
+		if fv, pv, err := v.Number(); err == nil {
+			fileVer = fmt.Sprintf("%d.%d.%d.%d", fv[0], fv[1], fv[2], fv[3])
+			prodVer = fmt.Sprintf("%d.%d.%d.%d", pv[0], pv[1], pv[2], pv[3])
+		}
+	}
+
+	h := md5.New()
+	if _, err := io.Copy(h, fd); err != nil {
+		return nil
+	}
+
+	return &exeSpec{
+		Name:           fname,
+		Md5Sum:         fmt.Sprintf("%x", h.Sum(nil)),
+		FileVersion:    fileVer,
+		ProductVersion: prodVer,
+		Size:           size,
+	}
+}
+
 func listProductLong(sln *Solution) error {
 	list, err := listupProduct(sln)
 	if err != nil {
 		return err
 	}
-	for _, s := range list {
-		fmt.Println(s)
+	for _, fname := range list {
+		fmt.Println(fname)
+		if spec := getExeSpec(fname); spec != nil {
+			fmt.Printf("\t%-18s%-18s\n", spec.FileVersion, spec.ProductVersion)
+			fmt.Printf("\t%d bytes md5sum:%s\n", spec.Size, spec.Md5Sum)
+		}
 	}
 	return nil
 }
