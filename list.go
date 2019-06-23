@@ -200,7 +200,7 @@ func listProductLong(sln *Solution) error {
 				spec.FileVersion,
 				spec.ProductVersion,
 				spec.Stamp.Format("2006-01-02 15:04:05"))
-			fmt.Printf("\t%d bytes md5sum:%s\n", spec.Size, spec.Md5Sum)
+			fmt.Printf("\t%d bytes  md5sum:%s\n", spec.Size, spec.Md5Sum)
 		}
 	}
 	return nil
