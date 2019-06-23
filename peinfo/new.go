@@ -71,3 +71,26 @@ func New(fname string) *exeSpec {
 		Is64bit:        is64bitFlag,
 	}
 }
+
+func (spec *exeSpec) WriteTo(w io.Writer) (int64, error) {
+	n1, err := fmt.Fprintln(w, spec.Name)
+	if err != nil {
+		return int64(n1), err
+	}
+
+	var bit string
+	if spec.Is64bit {
+		bit = " (64)"
+	}
+
+	n2, err := fmt.Fprintf(w, "\t%-18s%-18s%-18s%s\n",
+		spec.FileVersion,
+		spec.ProductVersion,
+		spec.Stamp.Format("2006-01-02 15:04:05"),
+		bit)
+	if err != nil {
+		return int64(n1 + n2), err
+	}
+	n3, err := fmt.Fprintf(w, "\t%d bytes  md5sum:%s\n", spec.Size, spec.Md5Sum)
+	return int64(n1 + n2 + n3), err
+}
