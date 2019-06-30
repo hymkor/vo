@@ -18,7 +18,7 @@ func getPeHeaderPos(fd io.ReaderAt) (uint32, error) {
 	return binary.LittleEndian.Uint32(array[:]), nil
 }
 
-func GetPEStamp(fd io.ReaderAt) (time.Time, error) {
+func GetTimeStamp(fd io.ReaderAt) (time.Time, error) {
 	var array [4]byte
 
 	peHeaderPos, err := getPeHeaderPos(fd)
