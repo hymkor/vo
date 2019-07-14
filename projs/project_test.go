@@ -1,6 +1,7 @@
 package projs
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
@@ -19,7 +20,7 @@ func TestProjectRead(t *testing.T) {
 	properties := Properties(map[string]string{
 		"Platform": "Win32",
 	})
-	err := properties.ReadProject(strings.NewReader(xml))
+	err := properties.ReadProject(strings.NewReader(xml), os.Stdout)
 	if err != nil {
 		t.Fatal()
 	}
