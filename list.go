@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/zetamatta/vf1s/peinfo"
+	"github.com/zetamatta/vf1s/projs"
 )
 
 const dotNetDLLType = "Library"
@@ -24,7 +25,7 @@ func listupProduct(sln *Solution) ([]string, error) {
 
 		for _, configuration := range sln.Configuration {
 			piece := strings.Split(configuration, "|")
-			props := Properties{
+			props := projs.Properties{
 				"Configuration": strings.ReplaceAll(strings.TrimSpace(piece[0]), " ", ""),
 				"Platform":      strings.ReplaceAll(strings.TrimSpace(piece[1]), " ", ""),
 			}
