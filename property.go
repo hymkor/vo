@@ -26,7 +26,7 @@ func evalString(sc io.RuneScanner) (string, error) {
 		return "", err
 	}
 	if r != '\'' {
-		return "", errors.New("not string")
+		return "", errors.New("not string literal")
 	}
 	var buffer strings.Builder
 	for {
@@ -79,10 +79,17 @@ var rxEnvPattern = regexp.MustCompile(`\$\([^\)]+\)`)
 
 type Properties map[string]string
 
-func (properties Properties) EvalText(text string) (bool, error) {
-	text = rxEnvPattern.ReplaceAllStringFunc(text,
+func (properties Properties) Replace(text string) string {
+	return rxEnvPattern.ReplaceAllStringFunc(text,
 		func(s string) string {
 			return properties[s[2:len(s)-1]]
 		})
-	return evalCondition(text)
+}
+
+func (properties Properties) EvalText(text string) (bool, error) {
+	rc, err := evalCondition(properties.Replace(text))
+	if trace {
+		println("EvalText:", text, rc)
+	}
+	return rc, err
 }

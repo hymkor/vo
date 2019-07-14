@@ -2,12 +2,15 @@ package main
 
 import (
 	"encoding/xml"
+	"fmt"
 	"io"
 	"os"
 	"strings"
 )
 
-func (properties Properties) ReadProject(r io.Reader) error {
+const trace = false
+
+func (properties Properties) ReadProject(r io.Reader, log io.Writer) error {
 	decoder := xml.NewDecoder(r)
 	var lastElement string
 	for {
@@ -20,11 +23,24 @@ func (properties Properties) ReadProject(r io.Reader) error {
 		}
 		switch se := token.(type) {
 		case xml.StartElement:
+			if se.Name.Local == "ProjectConfiguration" {
+				target := strings.TrimSpace(properties["Configuration"]) +
+					"|" + strings.TrimSpace(properties["Platform"])
+				for _, attr1 := range se.Attr {
+					if attr1.Name.Local == "Include" && attr1.Value != target {
+						decoder.Skip()
+						// println("skip for", attr1.Value, "!=", target)
+						goto next
+					}
+				}
+			}
 			for _, attr1 := range se.Attr {
 				if attr1.Name.Local == "Condition" {
 					status, err := (properties).EvalText(attr1.Value)
 					if err != nil {
-						return err
+						fmt.Fprintf(log, "Condition: '%s' could not parse.(%s)\n",
+							attr1.Value, err.Error())
+						continue
 					}
 					if !status {
 						decoder.Skip()
@@ -38,8 +54,8 @@ func (properties Properties) ReadProject(r io.Reader) error {
 			lastElement = ""
 		case xml.CharData:
 			if lastElement != "" {
-				value := strings.TrimSpace(string(se))
-				properties[lastElement] = value
+				properties[lastElement] =
+					properties.Replace(strings.TrimSpace(string(se)))
 			}
 			break
 		}
@@ -47,11 +63,11 @@ func (properties Properties) ReadProject(r io.Reader) error {
 	}
 }
 
-func (properties Properties) LoadProject(projname string) error {
+func (properties Properties) LoadProject(projname string, log io.Writer) error {
 	fd, err := os.Open(projname)
 	if err != nil {
 		return err
 	}
 	defer fd.Close()
-	return properties.ReadProject(fd)
+	return properties.ReadProject(fd, log)
 }
