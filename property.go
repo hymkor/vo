@@ -77,7 +77,9 @@ func evalCondition(s string) (bool, error) {
 
 var rxEnvPattern = regexp.MustCompile(`\$\([^\)]+\)`)
 
-func EvalProperties(properties map[string]string, text string) (bool, error) {
+type Properties map[string]string
+
+func (properties Properties) EvalText(text string) (bool, error) {
 	text = rxEnvPattern.ReplaceAllStringFunc(text,
 		func(s string) string {
 			return properties[s[2:len(s)-1]]

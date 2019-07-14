@@ -63,12 +63,12 @@ func TestEvalPropertiesition(t *testing.T) {
 }
 
 func TestPropertiesition(t *testing.T) {
-	properties := map[string]string{
+	properties := Properties(map[string]string{
 		"Platform":      "x86",
 		"Configuration": "Debug",
-	}
+	})
 
-	status, err := EvalProperties(properties, "'$(Platform)' == 'x86'")
+	status, err := properties.EvalText("'$(Platform)' == 'x86'")
 	if err != nil {
 		t.Fatal()
 		return
@@ -78,7 +78,7 @@ func TestPropertiesition(t *testing.T) {
 		return
 	}
 
-	status, err = EvalProperties(properties, "'$(Platform)' == 'Win32'")
+	status, err = properties.EvalText("'$(Platform)' == 'Win32'")
 	if err != nil {
 		t.Fatal()
 		return

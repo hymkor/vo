@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func projectRead(r io.Reader, properties map[string]string) error {
+func (properties Properties) ReadProject(r io.Reader) error {
 	decoder := xml.NewDecoder(r)
 	var lastElement string
 	for {
@@ -22,13 +22,13 @@ func projectRead(r io.Reader, properties map[string]string) error {
 		case xml.StartElement:
 			for _, attr1 := range se.Attr {
 				if attr1.Name.Local == "Condition" {
-					status, err := EvalProperties(properties, attr1.Value)
+					status, err := (properties).EvalText(attr1.Value)
 					if err != nil {
 						return err
 					}
 					if !status {
 						decoder.Skip()
-						break
+						goto next
 					}
 				}
 			}
@@ -43,14 +43,15 @@ func projectRead(r io.Reader, properties map[string]string) error {
 			}
 			break
 		}
+	next:
 	}
 }
 
-func projectLoad(projname string, properties map[string]string) error {
+func (properties Properties) LoadProject(projname string) error {
 	fd, err := os.Open(projname)
 	if err != nil {
 		return err
 	}
 	defer fd.Close()
-	return projectRead(fd, properties)
+	return properties.ReadProject(fd)
 }

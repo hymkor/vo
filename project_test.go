@@ -16,10 +16,10 @@ func TestProjectRead(t *testing.T) {
 			</PropertyGroup>
 		</Project>
 		`
-	properties := map[string]string{
+	properties := Properties(map[string]string{
 		"Platform": "Win32",
-	}
-	err := projectRead(strings.NewReader(xml), properties)
+	})
+	err := properties.ReadProject(strings.NewReader(xml))
 	if err != nil {
 		t.Fatal()
 	}
