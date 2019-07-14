@@ -13,12 +13,6 @@ import (
 	"github.com/zetamatta/vf1s/peinfo"
 )
 
-type NetProj struct {
-	AssemblyName string   `xml:"PropertyGroup>AssemblyName"`
-	OutputType   string   `xml:"PropertyGroup>OutputType"`
-	OutputPath   []string `xml:"PropertyGroup>OutputPath"`
-}
-
 const dotNetDLLType = "Library"
 
 type OutDirT struct {
@@ -103,20 +97,24 @@ func listupProduct(sln *Solution) ([]string, error) {
 		} else if strings.HasSuffix(_projPath, ".vbproj") ||
 			strings.HasSuffix(_projPath, ".csproj") {
 
-			vbp := NetProj{}
-			err = xml.Unmarshal(bin, &vbp)
-			if err != nil {
-				return nil, err
-			}
-			filename := vbp.AssemblyName
-			if vbp.OutputType == dotNetDLLType {
-				filename += ".dll"
-			} else {
-				filename += ".exe"
-			}
+			for _, configuration := range sln.Configuration {
+				piece := strings.Split(configuration, "|")
+				props := Properties{
+					"Configuration": strings.ReplaceAll(strings.TrimSpace(piece[0]), " ", ""),
+					"Platform":      strings.ReplaceAll(strings.TrimSpace(piece[1]), " ", ""),
+				}
+				props.LoadProject(projPath)
 
-			for _, dir := range vbp.OutputPath {
-				result = append(result, filepath.Join(basedir, dir, filename))
+				filename := props["AssemblyName"]
+				if ext, ok := props["TargetExt"]; ok {
+					filename += ext
+				} else if props["OutputType"] == dotNetDLLType {
+					filename += ".dll"
+				} else {
+					filename += ".exe"
+				}
+				target := filepath.Join(basedir, props["OutputPath"], filename)
+				result = append(result, target)
 			}
 		} else {
 			continue
