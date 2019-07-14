@@ -95,7 +95,9 @@ func NewSolution(fname string) (*Solution, error) {
 				if f[0] == "EndGlobalSection" {
 					block = save
 				} else {
-					sln.Configuration = append(sln.Configuration, f[0])
+					piece := strings.Split(line, "=")
+					sln.Configuration = append(sln.Configuration,
+						strings.TrimSpace(piece[0]))
 				}
 			}
 		}
