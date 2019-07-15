@@ -48,6 +48,17 @@ func (properties Properties) ReadProject(r io.Reader, log io.Writer) error {
 					}
 				}
 			}
+			if se.Name.Local == "Import" {
+				for _, attr1 := range se.Attr {
+					if attr1.Name.Local == "Project" {
+						err := properties.LoadProject(
+							properties.Expand(attr1.Value), log)
+						if err != nil {
+							fmt.Fprintf(log, "%s: could not open.\n", attr1.Value)
+						}
+					}
+				}
+			}
 			lastElement = se.Name.Local
 			break
 		case xml.EndElement:
