@@ -36,13 +36,13 @@ func upper16bit(n uint32) uint {
 	return uint(n>>16) & 0xFFFF
 }
 
-type versionInfo struct {
+type VersionInfo struct {
 	buffer []byte
 	size   uintptr
 	fname  *uint16
 }
 
-func GetVersionInfo(fname string) (*versionInfo, error) {
+func GetVersionInfo(fname string) (*VersionInfo, error) {
 	_fname, err := windows.UTF16PtrFromString(fname)
 	if err != nil {
 		return nil, err
@@ -72,14 +72,14 @@ func GetVersionInfo(fname string) (*versionInfo, error) {
 		return nil, errors.New("GetFileVersioninfo failed.")
 	}
 
-	return &versionInfo{
+	return &VersionInfo{
 		buffer: buffer,
 		size:   size,
 		fname:  _fname,
 	}, nil
 }
 
-func (vi *versionInfo) query(key string, f uintptr) (uintptr, error) {
+func (vi *VersionInfo) query(key string, f uintptr) (uintptr, error) {
 	subBlock, err := windows.UTF16PtrFromString(key)
 	if err != nil {
 		return 0, err
@@ -94,7 +94,9 @@ func (vi *versionInfo) query(key string, f uintptr) (uintptr, error) {
 	return queryLen, nil
 }
 
-func (vi *versionInfo) Number() (file []uint, product []uint, err error) {
+// Number returns executable's File-Version(slice of 4-integers)
+// and Product-Version(slice of 4-integers).
+func (vi *VersionInfo) Number() (file []uint, product []uint, err error) {
 	var f *vsFixedFileInfo
 
 	_, err = vi.query(`\`, uintptr(unsafe.Pointer(&f)))
