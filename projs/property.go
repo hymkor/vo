@@ -3,6 +3,7 @@ package projs
 import (
 	"errors"
 	"io"
+	"os"
 	"regexp"
 	"strings"
 	"unicode"
@@ -76,10 +77,24 @@ func evalEquation(sc io.RuneScanner) (bool, error) {
 	}
 }
 
+var rxExists = regexp.MustCompile(`^\s*[eE]xists\((.*)\)\s*$`)
+
 func EvalCondition(s string) (bool, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return true, nil
+	}
+	if m := rxExists.FindStringSubmatch(s); m != nil {
+		s, err := evalString(strings.NewReader(m[1]))
+		if err != nil {
+			return false, err
+		}
+		if fd, err := os.Open(s); err == nil {
+			fd.Close()
+			return true, nil
+		} else {
+			return false, nil
+		}
 	}
 	return evalEquation(strings.NewReader(s))
 }
@@ -89,16 +104,23 @@ var rxEnvPattern = regexp.MustCompile(`\$\([^\)]+\)`)
 type Properties map[string]string
 
 // Expand replaces $(var) to the value of the property.
-func (properties Properties) Expand(text string) string {
+func (properties Properties) Expand(text string, onNotFound func(string) string) string {
 	return rxEnvPattern.ReplaceAllStringFunc(text,
 		func(s string) string {
-			return properties[s[2:len(s)-1]]
+			name := s[2 : len(s)-1]
+			if s, ok := properties[name]; ok {
+				return s
+			} else if onNotFound != nil {
+				return onNotFound(name)
+			} else {
+				return ""
+			}
 		})
 }
 
 // EvalCondition expands $(var) of text and evalute it as an equation.
 func (properties Properties) EvalCondition(text string) (bool, error) {
-	rc, err := EvalCondition(properties.Expand(text))
+	rc, err := EvalCondition(properties.Expand(text, nil))
 	if trace {
 		println("EvalText:", text, rc)
 	}

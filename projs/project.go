@@ -36,10 +36,14 @@ func (properties Properties) ReadProject(r io.Reader, log io.Writer) error {
 			}
 			for _, attr1 := range se.Attr {
 				if attr1.Name.Local == "Condition" {
-					status, err := (properties).EvalCondition(attr1.Value)
+					value := properties.Expand(attr1.Value, func(s string) string {
+						fmt.Fprintf(log, "Condition: variable $(%s) not found.\n", s)
+						return ""
+					})
+					status, err := EvalCondition(value)
 					if err != nil {
 						fmt.Fprintf(log, "Condition: `%s` could not parse.(%s)\n",
-							attr1.Value, err.Error())
+							value, err.Error())
 						continue
 					}
 					if !status {
@@ -51,10 +55,13 @@ func (properties Properties) ReadProject(r io.Reader, log io.Writer) error {
 			if se.Name.Local == "Import" {
 				for _, attr1 := range se.Attr {
 					if attr1.Name.Local == "Project" {
-						err := properties.LoadProject(
-							properties.Expand(attr1.Value), log)
+						value := properties.Expand(attr1.Value, func(s string) string {
+							fmt.Fprintf(log, "Condition: variable $(%s) not found.\n", s)
+							return ""
+						})
+						err := properties.LoadProject(value, log)
 						if err != nil {
-							fmt.Fprintf(log, "Imports: `%s` could not open.\n", attr1.Value)
+							fmt.Fprintf(log, "Imports: `%s` could not open.\n", value)
 						}
 					}
 				}
@@ -66,7 +73,10 @@ func (properties Properties) ReadProject(r io.Reader, log io.Writer) error {
 		case xml.CharData:
 			if lastElement != "" {
 				properties[lastElement] =
-					properties.Expand(strings.TrimSpace(string(se)))
+					properties.Expand(strings.TrimSpace(string(se)), func(s string) string {
+						fmt.Fprintf(log, "$(%s) not found.\n", s)
+						return ""
+					})
 			}
 			break
 		}
@@ -79,6 +89,9 @@ func (properties Properties) LoadProject(projname string, log io.Writer) error {
 	if err != nil {
 		return err
 	}
-	defer fd.Close()
-	return properties.ReadProject(fd, log)
+	fmt.Fprintf(log, "*** Start to read project `%s` ***\n", projname)
+	rc := properties.ReadProject(fd, log)
+	fmt.Fprintf(log, "*** End to read project `%s` ***\n", projname)
+	fd.Close()
+	return rc
 }
