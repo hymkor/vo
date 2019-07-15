@@ -20,7 +20,7 @@ Build the release version
 -------------------------
 
 ```
-$ vf1s.exe -r WorkReport.sln
+$ vf1s.exe -v -r WorkReport.sln
 WorkReport.sln: word '2010' found.
 %VS100COMNTOOLS% is not set.
 look for other versions of Visual Studio.
@@ -36,7 +36,7 @@ Build the debug version
 -----------------------
 
 ```
-$ vf1s.exe -d
+$ vf1s.exe -v -d
 WorkReport.sln: word '2010' found.
 %VS100COMNTOOLS% is not set.
 look for other versions of Visual Studio.
@@ -94,7 +94,7 @@ Help
 
 ```
 $ vf1s.exe -h
-Usage of C:\Users\hymko\go\bin\vf1s.exe:
+Usage of vf1s.exe:
   -2010
         use Visual Studio 2010
   -2013
@@ -110,12 +110,18 @@ Usage of C:\Users\hymko\go\bin\vf1s.exe:
         specify the configuraion to build
   -d    build configurations contains /Debug/
   -i    open ide
+  -ll
+        list products
   -ls
         list products
   -n    dry run
   -r    build configurations contains /Release/
   -re
         rebuild
+  -showver string
+        show version
+  -v    verbose
+  -w    show warnings
 ```
 
 The library
