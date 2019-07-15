@@ -46,12 +46,19 @@ When the solution filename is omitted, use the solution file on the current dire
 List up products
 ----------------
 
-Now, supporting .csproj and .vbproj
-
 ```
 $ vf1s.exe -ls
+"bin\Debug\WorkReport.exe"      "bin\Release\WorkReport.exe"
+```
+
+```
+$ vf1s.exe -ll
 bin\Debug\WorkReport.exe
+        1.0.0.11          1.0.0.11          2019-07-14 17:53:21
+        47104 bytes  md5sum:1a91d74d9594b2bc575c5bf5327dfa5e
 bin\Release\WorkReport.exe
+        1.0.0.11          1.0.0.11          2019-07-14 17:53:26
+        44032 bytes  md5sum:6bfb25c0bb155e6a4b1c05e152eb9be0
 ```
 
 Help
