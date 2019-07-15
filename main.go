@@ -122,12 +122,12 @@ func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 	return "", io.EOF
 }
 
-func run(devenv string, param ...string) error {
-	cmd1 := exec.Command(string(devenv), param...)
+func run(devenvPath string, param ...string) error {
+	cmd1 := exec.Command(devenvPath, param...)
 	cmd1.Stdin = os.Stdin
 	cmd1.Stdout = os.Stdout
 	cmd1.Stderr = os.Stderr
-	fmt.Printf("\"%s\" \"%s\"\n", devenv, strings.Join(param, "\" \""))
+	fmt.Printf("\"%s\" \"%s\"\n", devenvPath, strings.Join(param, "\" \""))
 	if *flagDryRun {
 		return nil
 	}
@@ -166,27 +166,26 @@ func _main() error {
 	if err != nil {
 		return err
 	}
-	if *flagListProductInline {
-		return listProductInline(sln)
-	}
-	if *flagListProductLong {
-		return listProductLong(sln)
-	}
 
-	devenv, err := seekDevenv(sln, os.Stderr)
+	devenvPath, err := seekDevenv(sln, os.Stderr)
 	if err != nil {
 		return errors.New("devenv.com not found")
 	}
-
+	if *flagListProductInline {
+		return listProductInline(sln, devenvPath)
+	}
+	if *flagListProductLong {
+		return listProductLong(sln, devenvPath)
+	}
 	if *flagIde {
-		return run(devenv, slnPath)
+		return run(devenvPath, slnPath)
 	}
 	action := "/build"
 	if *flagRebuild {
 		action = "/rebuild"
 	}
 	if *flagConfig != "" {
-		return run(devenv, slnPath, action, *flagConfig)
+		return run(devenvPath, slnPath, action, *flagConfig)
 	}
 
 	var filter func(string) bool
@@ -203,7 +202,7 @@ func _main() error {
 
 	for _, conf := range sln.Configuration {
 		if filter(strings.ToLower(conf)) {
-			if err := run(devenv, slnPath, action, conf); err != nil {
+			if err := run(devenvPath, slnPath, action, conf); err != nil {
 				return err
 			}
 		}
