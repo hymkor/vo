@@ -34,7 +34,7 @@ func getVCTargetsPath(compath string) (string, error) {
 	return filepath.Join(vcpath, result), nil
 }
 
-func listupProduct(sln *Solution, devenvPath string) ([]string, error) {
+func listupProduct(sln *Solution, devenvPath string, warning io.Writer) ([]string, error) {
 	result := []string{}
 
 	vcTargetsPath, _ := getVCTargetsPath(devenvPath)
@@ -51,7 +51,7 @@ func listupProduct(sln *Solution, devenvPath string) ([]string, error) {
 				"Platform":      strings.ReplaceAll(strings.TrimSpace(piece[1]), " ", ""),
 				"VCTargetsPath": vcTargetsPath,
 			}
-			err := props.LoadProject(projPath, os.Stderr)
+			err := props.LoadProject(projPath, warning)
 			if err != nil {
 				return result, err
 			}
@@ -85,8 +85,8 @@ func listupProduct(sln *Solution, devenvPath string) ([]string, error) {
 	return result, nil
 }
 
-func listProductInline(sln *Solution, devenvPath string) error {
-	list, err := listupProduct(sln, devenvPath)
+func listProductInline(sln *Solution, devenvPath string, warning io.Writer) error {
+	list, err := listupProduct(sln, devenvPath, warning)
 	if err != nil {
 		return err
 	}
@@ -107,8 +107,8 @@ func showVer(fname string, w io.Writer) {
 	}
 }
 
-func listProductLong(sln *Solution, devenvPath string) error {
-	list, err := listupProduct(sln, devenvPath)
+func listProductLong(sln *Solution, devenvPath string, warning io.Writer) error {
+	list, err := listupProduct(sln, devenvPath, warning)
 	if err != nil {
 		return err
 	}

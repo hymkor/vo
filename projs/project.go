@@ -38,7 +38,7 @@ func (properties Properties) ReadProject(r io.Reader, log io.Writer) error {
 				if attr1.Name.Local == "Condition" {
 					status, err := (properties).EvalCondition(attr1.Value)
 					if err != nil {
-						fmt.Fprintf(log, "Condition: '%s' could not parse.(%s)\n",
+						fmt.Fprintf(log, "Condition: `%s` could not parse.(%s)\n",
 							attr1.Value, err.Error())
 						continue
 					}
@@ -54,7 +54,7 @@ func (properties Properties) ReadProject(r io.Reader, log io.Writer) error {
 						err := properties.LoadProject(
 							properties.Expand(attr1.Value), log)
 						if err != nil {
-							fmt.Fprintf(log, "%s: could not open.\n", attr1.Value)
+							fmt.Fprintf(log, "Imports: `%s` could not open.\n", attr1.Value)
 						}
 					}
 				}

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -145,12 +146,18 @@ var (
 	flagRebuild           = flag.Bool("re", false, "rebuild")
 	flagIde               = flag.Bool("i", false, "open ide")
 	flagConfig            = flag.String("c", "", "specify the configuraion to build")
+	flagWarning           = flag.Bool("w", false, "show warnings")
 )
 
 func _main() error {
 	flag.Parse()
 
 	args := flag.Args()
+
+	warning := ioutil.Discard
+	if *flagWarning {
+		warning = os.Stderr
+	}
 
 	if *flagShowVer != "" {
 		showVer(*flagShowVer, os.Stdout)
@@ -172,10 +179,10 @@ func _main() error {
 		return errors.New("devenv.com not found")
 	}
 	if *flagListProductInline {
-		return listProductInline(sln, devenvPath)
+		return listProductInline(sln, devenvPath, warning)
 	}
 	if *flagListProductLong {
-		return listProductLong(sln, devenvPath)
+		return listProductLong(sln, devenvPath, warning)
 	}
 	if *flagIde {
 		return run(devenvPath, slnPath)
