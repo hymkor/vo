@@ -1,5 +1,11 @@
-vf1s - Visual Studio Commandline Client
-=======================================
+vf1s is the tool which supports these works all on the command line.
+
+- Build projects for the any-version's Visual Studio.
+- Show the product information: version, timestamp and check-sum.
+- The library to parse project-xml-files and portable-executables.
+
+Build projects
+==============
 
 Look for devenv.com and call it to build a product.
 
@@ -9,12 +15,6 @@ Look for devenv.com and call it to build a product.
 - for 2017, call `vswhere -version [15.0,16.0)`
 - for 2019, call `vswhere -version [16.0,17.0)`
 
-This product has these sub-package.
-
-- [peinfo](https://godoc.org/github.com/zetamatta/vf1s/peinfo)
-    - The library which gets version information from binary imag of executables.
-- [projs](https://godoc.org/github.com/zetamatta/vf1s/projs)
-    - The library which parses `*.vcxproj` , `*.vbproj` and `*.csproj`.
 
 Build the release version
 -------------------------
@@ -50,13 +50,21 @@ Copyright (C) Microsoft Corp. All rights reserved.
 
 When the solution filename is omitted, use the solution file on the current directory.
 
-List up products
-----------------
+Show the product information 
+============================
+
+Show files in-line (separated by TAB)
+-----------------------------------
 
 ```
 $ vf1s.exe -ls
 "bin\Debug\WorkReport.exe"      "bin\Release\WorkReport.exe"
 ```
+
+These files are built by the solution files in the current directory.
+
+Show files multi-line with some information.
+--------------------------------------------
 
 ```
 $ vf1s.exe -ll
@@ -68,8 +76,21 @@ bin\Release\WorkReport.exe
         44032 bytes  md5sum:6bfb25c0bb155e6a4b1c05e152eb9be0
 ```
 
+These files are built by the solution files in the current directory.
+
+
+Show files specified by path
+----------------------------
+
+```
+$ vf1s.exe -showver bin\Release\WorkReport.exe
+bin\Release\WorkReport.exe
+        1.0.0.11          1.0.0.11          2019-07-14 17:53:26
+        44032 bytes  md5sum:6bfb25c0bb155e6a4b1c05e152eb9be0
+```
+
 Help
-----
+====
 
 ```
 $ vf1s.exe -h
@@ -96,3 +117,13 @@ Usage of C:\Users\hymko\go\bin\vf1s.exe:
   -re
         rebuild
 ```
+
+The library
+===========
+
+This product has these sub-package.
+
+- [peinfo](https://godoc.org/github.com/zetamatta/vf1s/peinfo)
+    - The library which gets version information from binary imag of executables.
+- [projs](https://godoc.org/github.com/zetamatta/vf1s/projs)
+    - The library which parses `*.vcxproj`, `*.vbproj` and `*.csproj`.
