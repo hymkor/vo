@@ -55,7 +55,7 @@ func (properties Properties) ReadProject(r io.Reader, log io.Writer) error {
 		case xml.CharData:
 			if lastElement != "" {
 				properties[lastElement] =
-					properties.Replace(strings.TrimSpace(string(se)))
+					properties.Expand(strings.TrimSpace(string(se)))
 			}
 			break
 		}

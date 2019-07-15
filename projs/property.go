@@ -79,7 +79,8 @@ var rxEnvPattern = regexp.MustCompile(`\$\([^\)]+\)`)
 
 type Properties map[string]string
 
-func (properties Properties) Replace(text string) string {
+// Expand replaces `$(var) to the value of the property.
+func (properties Properties) Expand(text string) string {
 	return rxEnvPattern.ReplaceAllStringFunc(text,
 		func(s string) string {
 			return properties[s[2:len(s)-1]]
@@ -87,7 +88,7 @@ func (properties Properties) Replace(text string) string {
 }
 
 func (properties Properties) EvalText(text string) (bool, error) {
-	rc, err := evalCondition(properties.Replace(text))
+	rc, err := evalCondition(properties.Expand(text))
 	if trace {
 		println("EvalText:", text, rc)
 	}
