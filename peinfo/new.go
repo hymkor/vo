@@ -57,7 +57,7 @@ func New(fname string) *ExeSpec {
 		return nil
 	}
 
-	stamp, _ := GetTimeStamp(fd)
+	stamp, _ := ReadTimeStamp(fd)
 
 	is64bitFlag, _ := is64bit(fd)
 
