@@ -19,7 +19,7 @@ func is64bit(r io.ReaderAt) (bool, error) {
 	return ok, nil
 }
 
-type exeSpec struct {
+type ExeSpec struct {
 	Name           string
 	Md5Sum         string
 	FileVersion    string
@@ -29,7 +29,7 @@ type exeSpec struct {
 	Is64bit        bool
 }
 
-func New(fname string) *exeSpec {
+func New(fname string) *ExeSpec {
 	fd, err := os.Open(fname)
 	if err != nil {
 		return nil
@@ -61,7 +61,7 @@ func New(fname string) *exeSpec {
 
 	is64bitFlag, _ := is64bit(fd)
 
-	return &exeSpec{
+	return &ExeSpec{
 		Name:           fname,
 		Md5Sum:         fmt.Sprintf("%x", h.Sum(nil)),
 		FileVersion:    fileVer,
@@ -72,7 +72,7 @@ func New(fname string) *exeSpec {
 	}
 }
 
-func (spec *exeSpec) WriteTo(w io.Writer) (int64, error) {
+func (spec *ExeSpec) WriteTo(w io.Writer) (int64, error) {
 	n1, err := fmt.Fprintln(w, spec.Name)
 	if err != nil {
 		return int64(n1), err
