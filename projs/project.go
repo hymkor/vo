@@ -36,7 +36,7 @@ func (properties Properties) ReadProject(r io.Reader, log io.Writer) error {
 			}
 			for _, attr1 := range se.Attr {
 				if attr1.Name.Local == "Condition" {
-					status, err := (properties).EvalText(attr1.Value)
+					status, err := (properties).EvalCondition(attr1.Value)
 					if err != nil {
 						fmt.Fprintf(log, "Condition: '%s' could not parse.(%s)\n",
 							attr1.Value, err.Error())

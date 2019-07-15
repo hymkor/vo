@@ -87,7 +87,7 @@ func (properties Properties) Expand(text string) string {
 		})
 }
 
-func (properties Properties) EvalText(text string) (bool, error) {
+func (properties Properties) EvalCondition(text string) (bool, error) {
 	rc, err := evalCondition(properties.Expand(text))
 	if trace {
 		println("EvalText:", text, rc)
