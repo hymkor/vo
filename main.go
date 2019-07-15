@@ -147,6 +147,7 @@ var (
 	flagIde               = flag.Bool("i", false, "open ide")
 	flagConfig            = flag.String("c", "", "specify the configuraion to build")
 	flagWarning           = flag.Bool("w", false, "show warnings")
+	flagVerbose           = flag.Bool("v", false, "verbose")
 )
 
 func _main() error {
@@ -157,6 +158,10 @@ func _main() error {
 	warning := ioutil.Discard
 	if *flagWarning {
 		warning = os.Stderr
+	}
+	verbose := ioutil.Discard
+	if *flagVerbose {
+		verbose = os.Stderr
 	}
 
 	if *flagShowVer != "" {
@@ -174,7 +179,7 @@ func _main() error {
 		return err
 	}
 
-	devenvPath, err := seekDevenv(sln, os.Stderr)
+	devenvPath, err := seekDevenv(sln, verbose)
 	if err != nil {
 		return errors.New("devenv.com not found")
 	}
