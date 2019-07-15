@@ -28,6 +28,7 @@ func vswherePath() (string, error) {
 	}
 }
 
+// ProductPath runs `vswhere.exe` and returns the path of `devenv.com`.
 func ProductPath(args ...string) (string, error) {
 	vswhere, err := vswherePath()
 	if err != nil {
