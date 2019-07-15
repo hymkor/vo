@@ -9,6 +9,13 @@ Look for devenv.com and call it to build a product.
 - for 2017, call `vswhere -version [15.0,16.0)`
 - for 2019, call `vswhere -version [16.0,17.0)`
 
+This product has these sub-package.
+
+- [peinfo](https://godoc.org/github.com/zetamatta/vf1s/peinfo)
+    - The library which gets version information from binary imag of executables.
+- [projs](https://godoc.org/github.com/zetamatta/vf1s/projs)
+    - The library which parses `*.vcxproj` , `*.vbproj` and `*.csproj`.
+
 Build the release version
 -------------------------
 
