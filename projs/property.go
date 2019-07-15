@@ -76,7 +76,7 @@ func evalEquation(sc io.RuneScanner) (bool, error) {
 	}
 }
 
-func evalCondition(s string) (bool, error) {
+func EvalCondition(s string) (bool, error) {
 	s = strings.TrimSpace(s)
 	if s == "" {
 		return true, nil
@@ -98,7 +98,7 @@ func (properties Properties) Expand(text string) string {
 
 // EvalCondition expands $(var) of text and evalute it as an equation.
 func (properties Properties) EvalCondition(text string) (bool, error) {
-	rc, err := evalCondition(properties.Expand(text))
+	rc, err := EvalCondition(properties.Expand(text))
 	if trace {
 		println("EvalText:", text, rc)
 	}
