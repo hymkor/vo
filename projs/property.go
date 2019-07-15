@@ -50,7 +50,12 @@ func evalEquation(sc io.RuneScanner) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if r != '=' {
+	var op bool
+	if r == '=' {
+		op = true
+	} else if r == '!' {
+		op = false
+	} else {
 		return false, errors.New("1st equal-mark not found")
 	}
 	r, _, err = sc.ReadRune()
@@ -64,7 +69,11 @@ func evalEquation(sc io.RuneScanner) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return first == second, nil
+	if op {
+		return first == second, nil
+	} else {
+		return first != second, nil
+	}
 }
 
 func evalCondition(s string) (bool, error) {
