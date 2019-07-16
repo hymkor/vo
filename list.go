@@ -34,6 +34,10 @@ func getVCTargetsPath(compath string) (string, error) {
 	return filepath.Join(vcpath, result), nil
 }
 
+func withoutExt(fname string) string {
+	return fname[:len(fname)-len(filepath.Ext(fname))]
+}
+
 func listupProduct(sln *Solution, devenvPath string, warning io.Writer) ([]string, error) {
 	result := []string{}
 
@@ -50,6 +54,7 @@ func listupProduct(sln *Solution, devenvPath string, warning io.Writer) ([]strin
 				"Configuration": strings.ReplaceAll(strings.TrimSpace(piece[0]), " ", ""),
 				"Platform":      strings.ReplaceAll(strings.TrimSpace(piece[1]), " ", ""),
 				"VCTargetsPath": vcTargetsPath,
+				"ProjectName":   withoutExt(filepath.Base(projPath)),
 			}
 			err := props.LoadProject(projPath, warning)
 			if err != nil {
