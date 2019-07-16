@@ -38,15 +38,13 @@ func withoutExt(fname string) string {
 	return fname[:len(fname)-len(filepath.Ext(fname))]
 }
 
-func listupProduct(sln *Solution, devenvPath string, warning io.Writer) ([]string, error) {
-	result := []string{}
-
+func getConfigToProperties(sln *Solution, devenvPath string, warning io.Writer) (map[string]projs.Properties, error) {
 	vcTargetsPath, _ := getVCTargetsPath(devenvPath)
-	// println("vctargetpath=", vcTargetsPath)
+
+	result := map[string]projs.Properties{}
 
 	for _projPath := range sln.Project {
 		projPath := filepath.Join(filepath.Dir(sln.Path), _projPath)
-		basedir := filepath.Dir(projPath)
 
 		for _, configuration := range sln.Configuration {
 			piece := strings.Split(configuration, "|")
@@ -55,37 +53,48 @@ func listupProduct(sln *Solution, devenvPath string, warning io.Writer) ([]strin
 				"Platform":      strings.ReplaceAll(strings.TrimSpace(piece[1]), " ", ""),
 				"VCTargetsPath": vcTargetsPath,
 				"ProjectName":   withoutExt(filepath.Base(projPath)),
+				"ProjectDir":    filepath.Dir(projPath),
 			}
 			err := props.LoadProject(projPath, warning)
 			if err != nil {
-				return result, err
+				return nil, err
 			}
-
-			outputFile := props["OutputFile"]
-			if outputFile == "" {
-				filename := props["AssemblyName"]
-				if filename == "" {
-					filename = filepath.Base(projPath)
-					filename = filename[:len(filename)-len(filepath.Ext(filename))]
-				}
-				if ext, ok := props["TargetExt"]; ok {
-					filename += ext
-				} else if props["OutputType"] == dotNetDLLType {
-					filename += ".dll"
-				} else if props["ConfigurationType"] == nativeDLLType {
-					filename += ".dll"
-				} else {
-					filename += ".exe"
-				}
-				outdir := props["OutputPath"]
-				if outdir == "" {
-					outdir = props["OutDir"]
-				}
-				outputFile = filepath.Join(outdir, filename)
-			}
-			target := filepath.Join(basedir, outputFile)
-			result = append(result, target)
+			result[configuration] = props
 		}
+	}
+	return result, nil
+}
+
+func listupProduct(sln *Solution, devenvPath string, warning io.Writer) ([]string, error) {
+	configToProperties, err := getConfigToProperties(sln, devenvPath, warning)
+	if err != nil {
+		return nil, err
+	}
+	result := []string{}
+	for _, props := range configToProperties {
+		outputFile := props["OutputFile"]
+		if outputFile == "" {
+			filename := props["AssemblyName"]
+			if filename == "" {
+				filename = props["ProjectName"]
+			}
+			if ext, ok := props["TargetExt"]; ok {
+				filename += ext
+			} else if props["OutputType"] == dotNetDLLType {
+				filename += ".dll"
+			} else if props["ConfigurationType"] == nativeDLLType {
+				filename += ".dll"
+			} else {
+				filename += ".exe"
+			}
+			outdir := props["OutputPath"]
+			if outdir == "" {
+				outdir = props["OutDir"]
+			}
+			outputFile = filepath.Join(outdir, filename)
+		}
+		target := filepath.Join(props["ProjectDir"], outputFile)
+		result = append(result, target)
 	}
 	return result, nil
 }
