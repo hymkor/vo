@@ -38,14 +38,14 @@ func withoutExt(fname string) string {
 	return fname[:len(fname)-len(filepath.Ext(fname))]
 }
 
-func getConfigToProperties(sln *Solution, devenvPath string, warning io.Writer) (map[string]projs.Properties, error) {
+func getProjToConfigToProps(sln *Solution, devenvPath string, warning io.Writer) (map[string]map[string]projs.Properties, error) {
 	vcTargetsPath, _ := getVCTargetsPath(devenvPath)
 
-	result := map[string]projs.Properties{}
+	projToConfigToProps := map[string]map[string]projs.Properties{}
 
 	for _projPath := range sln.Project {
 		projPath := filepath.Join(filepath.Dir(sln.Path), _projPath)
-
+		configToProps := map[string]projs.Properties{}
 		for _, configuration := range sln.Configuration {
 			piece := strings.Split(configuration, "|")
 			props := projs.Properties{
@@ -59,42 +59,47 @@ func getConfigToProperties(sln *Solution, devenvPath string, warning io.Writer) 
 			if err != nil {
 				return nil, err
 			}
-			result[configuration] = props
+			configToProps[configuration] = props
+		}
+		if len(configToProps) > 0 {
+			projToConfigToProps[_projPath] = configToProps
 		}
 	}
-	return result, nil
+	return projToConfigToProps, nil
 }
 
 func listupProduct(sln *Solution, devenvPath string, warning io.Writer) ([]string, error) {
-	configToProperties, err := getConfigToProperties(sln, devenvPath, warning)
+	projToConfigToProp, err := getProjToConfigToProps(sln, devenvPath, warning)
 	if err != nil {
 		return nil, err
 	}
 	result := []string{}
-	for _, props := range configToProperties {
-		outputFile := props["OutputFile"]
-		if outputFile == "" {
-			filename := props["AssemblyName"]
-			if filename == "" {
-				filename = props["ProjectName"]
+	for _, configToProps := range projToConfigToProp {
+		for _, props := range configToProps {
+			outputFile := props["OutputFile"]
+			if outputFile == "" {
+				filename := props["AssemblyName"]
+				if filename == "" {
+					filename = props["ProjectName"]
+				}
+				if ext, ok := props["TargetExt"]; ok {
+					filename += ext
+				} else if props["OutputType"] == dotNetDLLType {
+					filename += ".dll"
+				} else if props["ConfigurationType"] == nativeDLLType {
+					filename += ".dll"
+				} else {
+					filename += ".exe"
+				}
+				outdir := props["OutputPath"]
+				if outdir == "" {
+					outdir = props["OutDir"]
+				}
+				outputFile = filepath.Join(outdir, filename)
 			}
-			if ext, ok := props["TargetExt"]; ok {
-				filename += ext
-			} else if props["OutputType"] == dotNetDLLType {
-				filename += ".dll"
-			} else if props["ConfigurationType"] == nativeDLLType {
-				filename += ".dll"
-			} else {
-				filename += ".exe"
-			}
-			outdir := props["OutputPath"]
-			if outdir == "" {
-				outdir = props["OutDir"]
-			}
-			outputFile = filepath.Join(outdir, filename)
+			target := filepath.Join(props["ProjectDir"], outputFile)
+			result = append(result, target)
 		}
-		target := filepath.Join(props["ProjectDir"], outputFile)
-		result = append(result, target)
 	}
 	return result, nil
 }
