@@ -148,6 +148,7 @@ var (
 	flagConfig            = flag.String("c", "", "specify the configuraion to build")
 	flagWarning           = flag.Bool("w", false, "show warnings")
 	flagVerbose           = flag.Bool("v", false, "verbose")
+	flagEval              = flag.String("e", "", "eval variable")
 )
 
 func _main() error {
@@ -180,6 +181,9 @@ func _main() error {
 	}
 
 	devenvPath, err := seekDevenv(sln, verbose)
+	if *flagEval != "" {
+		return eval(sln, devenvPath, *flagEval)
+	}
 	if *flagListProductInline {
 		return listProductInline(sln, devenvPath, warning)
 	}
