@@ -39,7 +39,10 @@ func withoutExt(fname string) string {
 }
 
 func getProjToConfigToProps(sln *Solution, devenvPath string, warning io.Writer) (map[string]map[string]projs.Properties, error) {
-	vcTargetsPath, _ := getVCTargetsPath(devenvPath)
+	var vcTargetsPath string
+	if devenvPath != "" {
+		vcTargetsPath, _ = getVCTargetsPath(devenvPath)
+	}
 
 	projToConfigToProps := map[string]map[string]projs.Properties{}
 

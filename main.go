@@ -180,14 +180,14 @@ func _main() error {
 	}
 
 	devenvPath, err := seekDevenv(sln, verbose)
-	if err != nil {
-		return errors.New("devenv.com not found")
-	}
 	if *flagListProductInline {
 		return listProductInline(sln, devenvPath, warning)
 	}
 	if *flagListProductLong {
 		return listProductLong(sln, devenvPath, warning)
+	}
+	if err != nil {
+		return errors.New("devenv.com not found")
 	}
 	if *flagIde {
 		return run(devenvPath, slnPath)
