@@ -71,14 +71,15 @@ func getProjToConfigToProps(sln *Solution, devenvPath string, warning io.Writer)
 	return projToConfigToProps, nil
 }
 
-func listupProduct(sln *Solution, devenvPath string, warning io.Writer) ([]string, error) {
+func listupProduct(sln *Solution, devenvPath string, warning io.Writer) (map[string]map[string]string, error) {
 	projToConfigToProp, err := getProjToConfigToProps(sln, devenvPath, warning)
 	if err != nil {
 		return nil, err
 	}
-	result := []string{}
-	for _, configToProps := range projToConfigToProp {
-		for _, props := range configToProps {
+	projToConfigToProduct := map[string]map[string]string{}
+	for proj, configToProps := range projToConfigToProp {
+		configToProduct := map[string]string{}
+		for config, props := range configToProps {
 			outputFile := props["OutputFile"]
 			if outputFile == "" {
 				filename := props["AssemblyName"]
@@ -101,21 +102,24 @@ func listupProduct(sln *Solution, devenvPath string, warning io.Writer) ([]strin
 				outputFile = filepath.Join(outdir, filename)
 			}
 			target := filepath.Join(props["ProjectDir"], outputFile)
-			result = append(result, target)
+			configToProduct[config] = target
 		}
+		projToConfigToProduct[proj] = configToProduct
 	}
-	return result, nil
+	return projToConfigToProduct, nil
 }
 
 func listProductInline(sln *Solution, devenvPath string, warning io.Writer) error {
-	list, err := listupProduct(sln, devenvPath, warning)
+	projToConfigToProduct, err := listupProduct(sln, devenvPath, warning)
 	if err != nil {
 		return err
 	}
 	ofs := ""
-	for _, s := range list {
-		fmt.Printf(`%s"%s"`, ofs, s)
-		ofs = "\t"
+	for _, configToProduct := range projToConfigToProduct {
+		for _, s := range configToProduct {
+			fmt.Printf(`%s"%s"`, ofs, s)
+			ofs = "\t"
+		}
 	}
 	fmt.Println()
 	return nil
@@ -130,12 +134,16 @@ func showVer(fname string, w io.Writer) {
 }
 
 func listProductLong(sln *Solution, devenvPath string, warning io.Writer) error {
-	list, err := listupProduct(sln, devenvPath, warning)
+	projToConfigToProduct, err := listupProduct(sln, devenvPath, warning)
 	if err != nil {
 		return err
 	}
-	for _, fname := range list {
-		showVer(fname, os.Stdout)
+	for proj, configToProduct := range projToConfigToProduct {
+		fmt.Printf("%s:\n", proj)
+		for config, fname := range configToProduct {
+			fmt.Printf("  %s:\n    ", config)
+			showVer(fname, os.Stdout)
+		}
 	}
 	return nil
 }
