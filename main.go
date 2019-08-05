@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/xml"
 	"errors"
 	"flag"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -71,6 +73,36 @@ var flag2015 = flag.Bool("2015", false, "use Visual Studio 2015")
 var flag2017 = flag.Bool("2017", false, "use Visual Studio 2017")
 var flag2019 = flag.Bool("2019", false, "use Visual Studio 2019")
 
+type xmlProjectT struct {
+	XMLName      xml.Name `xml:"Project"`
+	ToolsVersion string   `xml:"ToolsVersion,attr"`
+}
+
+func compareVersion(a, b string) int {
+	as := strings.Split(a, ".")
+	bs := strings.Split(b, ".")
+	for i, as1 := range as {
+		if i >= len(bs) {
+			return +1
+		}
+		bs1 := bs[i]
+		as1value, a_err := strconv.Atoi(as1)
+		bs1value, b_err := strconv.Atoi(bs1)
+		if a_err == nil && b_err == nil && as1value != bs1value {
+			return as1value - bs1value
+		}
+		if as1 < bs1 {
+			return -1
+		} else if as1 > bs1 {
+			return +1
+		}
+	}
+	if len(bs) > len(as) {
+		return -1
+	}
+	return 0
+}
+
 func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 	// option to force
 	if *flag2019 {
@@ -95,6 +127,22 @@ func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 		fmt.Fprintln(log, err)
 		fmt.Fprintln(log, "look for the other Visual Studio.")
 	}
+
+	// see project-files
+	var toolsVersion string
+	for projPath := range sln.Project {
+		xmlBin, err := ioutil.ReadFile(projPath)
+		if err == nil {
+			var xmlProject xmlProjectT
+			if xml.Unmarshal(xmlBin, &xmlProject) == nil {
+				toolsVersion1 := xmlProject.ToolsVersion
+				if compareVersion(toolsVersion, toolsVersion1) <= 0 {
+					toolsVersion = toolsVersion1
+				}
+			}
+		}
+	}
+	println("required toolsversion=", toolsVersion)
 
 	// solution files
 	if f := versionToSeekfunc[sln.Version]; f != nil {
