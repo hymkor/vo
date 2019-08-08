@@ -119,6 +119,15 @@ func maxToolsVersion(sln *Solution) (toolsVersion string) {
 	return
 }
 
+var toolsVersionToRequiredVisualStudio = map[string]string{
+	"4.0":  "2010",
+	"12.0": "2013",
+	"14.0": "2015",
+	"15.0": "2017",
+}
+
+// https://docs.microsoft.com/ja-jp/visualstudio/msbuild/msbuild-toolset-toolsversion?view=vs-2019
+
 func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 	// option to force
 	if *flag2019 {
