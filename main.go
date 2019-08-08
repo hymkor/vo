@@ -29,15 +29,15 @@ func envToCom(envname string) (string, error) {
 }
 
 func seek2010() (string, error) {
-	return envToCom("VS100COMNTOOLS")
+	return envToCom("VS100COMNTOOLS") // [10.0,11.0)
 }
 
 func seek2013() (string, error) {
-	return envToCom("VS120COMNTOOLS")
+	return envToCom("VS120COMNTOOLS") // [12.0,13.0)
 }
 
 func seek2015() (string, error) {
-	return envToCom("VS140COMNTOOLS")
+	return envToCom("VS140COMNTOOLS") // [14.0,15.0)
 }
 
 func seek2017() (string, error) {
@@ -103,6 +103,22 @@ func compareVersion(a, b string) int {
 	return 0
 }
 
+func maxToolsVersion(sln *Solution) (toolsVersion string) {
+	for projPath := range sln.Project {
+		xmlBin, err := ioutil.ReadFile(projPath)
+		if err == nil {
+			var xmlProject xmlProjectT
+			if xml.Unmarshal(xmlBin, &xmlProject) == nil {
+				toolsVersion1 := xmlProject.ToolsVersion
+				if compareVersion(toolsVersion, toolsVersion1) <= 0 {
+					toolsVersion = toolsVersion1
+				}
+			}
+		}
+	}
+	return
+}
+
 func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 	// option to force
 	if *flag2019 {
@@ -129,19 +145,7 @@ func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 	}
 
 	// see project-files
-	var toolsVersion string
-	for projPath := range sln.Project {
-		xmlBin, err := ioutil.ReadFile(projPath)
-		if err == nil {
-			var xmlProject xmlProjectT
-			if xml.Unmarshal(xmlBin, &xmlProject) == nil {
-				toolsVersion1 := xmlProject.ToolsVersion
-				if compareVersion(toolsVersion, toolsVersion1) <= 0 {
-					toolsVersion = toolsVersion1
-				}
-			}
-		}
-	}
+	toolsVersion := maxToolsVersion(sln)
 	println("required toolsversion=", toolsVersion)
 
 	// solution files
