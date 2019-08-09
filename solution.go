@@ -53,9 +53,23 @@ func FindSolution(args []string) (string, error) {
 type Solution struct {
 	Path          string
 	Version       string
+	MinVersion    string
 	Configuration []string
 	Project       map[string]string
 }
+
+var internalVersionToProductVersion = map[string]string{
+	"8.0":  "2005",
+	"9.0":  "2008",
+	"10.0": "2010",
+	"11.0": "2012",
+	"12.0": "2013",
+	"14.0": "2015",
+	"15.0": "2017",
+}
+
+var rxDefaultVersion = regexp.MustCompile(`^VisualStudioVersion\s*=\s*(\d+\.\d+)`)
+var rxMinimumVersion = regexp.MustCompile(`^MinimumVisualStudioVersion\s*=\s*(\d+\.\d+)`)
 
 var rxProjectList = regexp.MustCompile(
 	`^Project\([^)]+\)` +
@@ -78,8 +92,15 @@ func NewSolution(fname string) (*Solution, error) {
 
 	var block func(string, []string)
 	block = func(line string, f []string) {
-		if f[0] == "#" && f[1] == "Visual" && f[2] == "Studio" && len(f) >= 4 {
+		if f[0] == "#" && f[1] == "Visual" && f[2] == "Studio" && len(f) >= 4 && sln.Version == "" {
 			sln.Version = f[3]
+			// println("CommentVersion:", sln.Version)
+		} else if m := rxDefaultVersion.FindStringSubmatch(line); m != nil {
+			sln.Version = internalVersionToProductVersion[m[1]]
+			// println("DefaultVersion:", sln.Version)
+		} else if m := rxMinimumVersion.FindStringSubmatch(line); m != nil {
+			sln.MinVersion = internalVersionToProductVersion[m[1]]
+			// println("MinumumVersion:", sln.MinVersion)
 		} else if m := rxProjectList.FindStringSubmatch(line); m != nil {
 			//println("Found: ", m[1], " ", m[2])
 			sln.Project[m[1]] = m[2]
