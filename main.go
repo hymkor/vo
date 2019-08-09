@@ -155,11 +155,16 @@ func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 
 	// see project-files
 	toolsVersion := maxToolsVersion(sln)
-	println("required toolsversion=", toolsVersion)
+	requiredVisualStudio := toolsVersionToRequiredVisualStudio[toolsVersion]
 
-	// solution files
-	if f := versionToSeekfunc[sln.Version]; f != nil {
+	if requiredVisualStudio < sln.Version {
+		requiredVisualStudio = sln.Version
+	}
+
+	if f := versionToSeekfunc[requiredVisualStudio]; f != nil {
 		fmt.Fprintf(log, "%s: word '%s' found.\n", sln.Path, sln.Version)
+		fmt.Fprintf(log, "%s: required ToolsVersion is '%s'.\n", sln.Path, toolsVersion)
+		fmt.Fprintf(log, "%s: try to use Visual Studio %s.\n", sln.Path, requiredVisualStudio)
 		compath, err = f()
 		if compath != "" && err == nil {
 			return
