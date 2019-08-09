@@ -51,11 +51,29 @@ func FindSolution(args []string) (string, error) {
 }
 
 type Solution struct {
-	Path          string
-	Version       string
-	MinVersion    string
-	Configuration []string
-	Project       map[string]string
+	Path           string
+	MinimumVersion string
+	DefaultVersion string
+	CommentVersion string
+	Configuration  []string
+	Project        map[string]string
+}
+
+func (s *Solution) GetMinimumVersion() string {
+	if s.MinimumVersion != "" {
+		return s.MinimumVersion
+	}
+	if s.DefaultVersion < s.CommentVersion {
+		return s.DefaultVersion
+	}
+	return s.CommentVersion
+}
+
+func (s *Solution) GetVersion() string {
+	if s.DefaultVersion != "" {
+		return s.DefaultVersion
+	}
+	return s.CommentVersion
 }
 
 var internalVersionToProductVersion = map[string]string{
@@ -67,6 +85,8 @@ var internalVersionToProductVersion = map[string]string{
 	"14.0": "2015",
 	"15.0": "2017",
 }
+
+var rxCommentVersion = regexp.MustCompile(`^#\s*Visual\s+Studio\s+(\d+)`)
 
 var rxDefaultVersion = regexp.MustCompile(`^VisualStudioVersion\s*=\s*(\d+\.\d+)`)
 var rxMinimumVersion = regexp.MustCompile(`^MinimumVisualStudioVersion\s*=\s*(\d+\.\d+)`)
@@ -92,17 +112,13 @@ func NewSolution(fname string) (*Solution, error) {
 
 	var block func(string, []string)
 	block = func(line string, f []string) {
-		if f[0] == "#" && f[1] == "Visual" && f[2] == "Studio" && len(f) >= 4 && sln.Version == "" {
-			sln.Version = f[3]
-			// println("CommentVersion:", sln.Version)
+		if m := rxCommentVersion.FindStringSubmatch(line); m != nil {
+			sln.CommentVersion = m[1]
 		} else if m := rxDefaultVersion.FindStringSubmatch(line); m != nil {
-			sln.Version = internalVersionToProductVersion[m[1]]
-			// println("DefaultVersion:", sln.Version)
+			sln.DefaultVersion = internalVersionToProductVersion[m[1]]
 		} else if m := rxMinimumVersion.FindStringSubmatch(line); m != nil {
-			sln.MinVersion = internalVersionToProductVersion[m[1]]
-			// println("MinumumVersion:", sln.MinVersion)
+			sln.MinimumVersion = internalVersionToProductVersion[m[1]]
 		} else if m := rxProjectList.FindStringSubmatch(line); m != nil {
-			//println("Found: ", m[1], " ", m[2])
 			sln.Project[m[1]] = m[2]
 			save := block
 			block = func(line string, f []string) {
