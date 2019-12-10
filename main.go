@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/zetamatta/go-numeric-compare"
@@ -81,44 +80,19 @@ type xmlProjectT struct {
 	PlatformToolset []string `xml:"PropertyGroup>PlatformToolset"`
 }
 
-func compareVersion(a, b string) int {
-	as := strings.Split(a, ".")
-	bs := strings.Split(b, ".")
-	for i, as1 := range as {
-		if i >= len(bs) {
-			return +1
-		}
-		bs1 := bs[i]
-		as1value, a_err := strconv.Atoi(as1)
-		bs1value, b_err := strconv.Atoi(bs1)
-		if a_err == nil && b_err == nil && as1value != bs1value {
-			return as1value - bs1value
-		}
-		if as1 < bs1 {
-			return -1
-		} else if as1 > bs1 {
-			return +1
-		}
-	}
-	if len(bs) > len(as) {
-		return -1
-	}
-	return 0
-}
-
 func maxToolsVersion(sln *Solution) (toolsVersion, platformToolset string) {
 	for projPath := range sln.Project {
 		xmlBin, err := ioutil.ReadFile(projPath)
 		if err == nil {
 			var xmlProject xmlProjectT
 			if xml.Unmarshal(xmlBin, &xmlProject) == nil {
-				toolsVersion1 := xmlProject.ToolsVersion
-				if compareVersion(toolsVersion, toolsVersion1) <= 0 {
-					toolsVersion = toolsVersion1
+				v := xmlProject.ToolsVersion
+				if numeric.Compare(toolsVersion, v) <= 0 {
+					toolsVersion = v
 				}
-				for _, s := range xmlProject.PlatformToolset {
-					if numeric.Compare(platformToolset, s) < 0 {
-						platformToolset = s
+				for _, v := range xmlProject.PlatformToolset {
+					if numeric.Compare(platformToolset, v) < 0 {
+						platformToolset = v
 					}
 				}
 			}
