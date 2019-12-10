@@ -12,6 +12,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/zetamatta/go-numeric-compare"
 )
 
 func envToCom(envname string) (string, error) {
@@ -74,8 +76,9 @@ var flag2017 = flag.Bool("2017", false, "use Visual Studio 2017")
 var flag2019 = flag.Bool("2019", false, "use Visual Studio 2019")
 
 type xmlProjectT struct {
-	XMLName      xml.Name `xml:"Project"`
-	ToolsVersion string   `xml:"ToolsVersion,attr"`
+	XMLName         xml.Name `xml:"Project"`
+	ToolsVersion    string   `xml:"ToolsVersion,attr"`
+	PlatformToolset []string `xml:"PropertyGroup>PlatformToolset"`
 }
 
 func compareVersion(a, b string) int {
@@ -103,7 +106,7 @@ func compareVersion(a, b string) int {
 	return 0
 }
 
-func maxToolsVersion(sln *Solution) (toolsVersion string) {
+func maxToolsVersion(sln *Solution) (toolsVersion, platformToolset string) {
 	for projPath := range sln.Project {
 		xmlBin, err := ioutil.ReadFile(projPath)
 		if err == nil {
@@ -112,6 +115,11 @@ func maxToolsVersion(sln *Solution) (toolsVersion string) {
 				toolsVersion1 := xmlProject.ToolsVersion
 				if compareVersion(toolsVersion, toolsVersion1) <= 0 {
 					toolsVersion = toolsVersion1
+				}
+				for _, s := range xmlProject.PlatformToolset {
+					if numeric.Compare(platformToolset, s) < 0 {
+						platformToolset = s
+					}
 				}
 			}
 		}
@@ -124,6 +132,16 @@ var toolsVersionToRequiredVisualStudio = map[string]string{
 	"12.0": "2013",
 	"14.0": "2015",
 	"15.0": "2017",
+}
+
+var platformToolSetToRequiredVisualStudio = map[string]string{
+	"v90":     "2008",
+	"v100":    "2010",
+	"v120":    "2013",
+	"v120_xp": "2013",
+	"v140":    "2017",
+	"v141":    "2017",
+	"v141_xp": "2017",
 }
 
 // https://docs.microsoft.com/ja-jp/visualstudio/msbuild/msbuild-toolset-toolsversion?view=vs-2019
@@ -154,8 +172,14 @@ func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 	}
 
 	// see project-files
-	toolsVersion := maxToolsVersion(sln)
+	toolsVersion, platformToolSet := maxToolsVersion(sln)
 	requiredVisualStudio := toolsVersionToRequiredVisualStudio[toolsVersion]
+
+	if t, ok := platformToolSetToRequiredVisualStudio[platformToolSet]; ok {
+		if t > requiredVisualStudio {
+			requiredVisualStudio = t
+		}
+	}
 
 	if requiredVisualStudio < sln.Version {
 		requiredVisualStudio = sln.Version
@@ -164,6 +188,9 @@ func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
 	if f := versionToSeekfunc[requiredVisualStudio]; f != nil {
 		fmt.Fprintf(log, "%s: word '%s' found.\n", sln.Path, sln.Version)
 		fmt.Fprintf(log, "%s: required ToolsVersion is '%s'.\n", sln.Path, toolsVersion)
+		if platformToolSet != "" {
+			fmt.Fprintf(log, "Required PlatformToolSet is '%s'.\n", platformToolSet)
+		}
 		fmt.Fprintf(log, "%s: try to use Visual Studio %s.\n", sln.Path, requiredVisualStudio)
 		compath, err = f()
 		if compath != "" && err == nil {
