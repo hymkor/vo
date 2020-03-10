@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/xml"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -239,56 +238,74 @@ func _main() error {
 		return nil
 	}
 
-	slnPath, err := FindSolution(args)
+	slnPaths, err := findSolutions(args)
 	if err != nil {
 		return err
 	}
+	for _, slnPath := range slnPaths {
+		sln, err := NewSolution(slnPath)
+		if err != nil {
+			return fmt.Errorf("%s: %w", slnPath, err)
+		}
 
-	sln, err := NewSolution(slnPath)
-	if err != nil {
-		return err
-	}
+		devenvPath, err := seekDevenv(sln, verbose)
+		if err != nil {
+			return fmt.Errorf("%s: devenv.com not found", slnPath)
+		}
+		if *flagEval != "" {
+			if err := eval(sln, devenvPath, *flagEval); err != nil {
+				return fmt.Errorf("%s: %w", slnPath, err)
+			}
+			continue
+		}
+		if *flagListProductInline {
+			if err := listProductInline(sln, devenvPath, warning); err != nil {
+				return fmt.Errorf("%s: %w", slnPath, err)
+			}
+			continue
+		}
+		if *flagListProductLong {
+			if err := listProductLong(sln, devenvPath, warning); err != nil {
+				return fmt.Errorf("%s: %w", slnPath, err)
+			}
+			continue
+		}
 
-	devenvPath, err := seekDevenv(sln, verbose)
-	if *flagEval != "" {
-		return eval(sln, devenvPath, *flagEval)
-	}
-	if *flagListProductInline {
-		return listProductInline(sln, devenvPath, warning)
-	}
-	if *flagListProductLong {
-		return listProductLong(sln, devenvPath, warning)
-	}
-	if err != nil {
-		return errors.New("devenv.com not found")
-	}
-	if *flagIde {
-		return run(devenvPath, slnPath)
-	}
-	action := "/build"
-	if *flagRebuild {
-		action = "/rebuild"
-	}
-	if *flagConfig != "" {
-		return run(devenvPath, slnPath, action, *flagConfig)
-	}
+		// Below code are executed when only one solution file exists.
+		if len(slnPaths) >= 2 {
+			return fmt.Errorf("%s: too many solution files", strings.Join(slnPaths, " "))
+		}
+		if *flagIde {
+			if err := run(devenvPath, slnPath); err != nil {
+				return fmt.Errorf("%s: %w", slnPath, err)
+			}
+			continue
+		}
+		action := "/build"
+		if *flagRebuild {
+			action = "/rebuild"
+		}
+		if *flagConfig != "" {
+			return run(devenvPath, slnPath, action, *flagConfig)
+		}
 
-	var filter func(string) bool
-	if *flagAll {
-		filter = func(c string) bool { return true }
-	} else if *flagDebug {
-		filter = func(c string) bool { return strings.Contains(c, "debug") }
-	} else if *flagRelease {
-		filter = func(c string) bool { return strings.Contains(c, "release") }
-	} else {
-		flag.PrintDefaults()
-		return nil
-	}
+		var filter func(string) bool
+		if *flagAll {
+			filter = func(c string) bool { return true }
+		} else if *flagDebug {
+			filter = func(c string) bool { return strings.Contains(c, "debug") }
+		} else if *flagRelease {
+			filter = func(c string) bool { return strings.Contains(c, "release") }
+		} else {
+			flag.PrintDefaults()
+			return nil
+		}
 
-	for _, conf := range sln.Configuration {
-		if filter(strings.ToLower(conf)) {
-			if err := run(devenvPath, slnPath, action, conf); err != nil {
-				return err
+		for _, conf := range sln.Configuration {
+			if filter(strings.ToLower(conf)) {
+				if err := run(devenvPath, slnPath, action, conf); err != nil {
+					return err
+				}
 			}
 		}
 	}

@@ -2,14 +2,12 @@ package main
 
 import (
 	"bufio"
-	"errors"
-	"fmt"
 	"os"
 	"regexp"
 	"strings"
 )
 
-func findSolution(args []string) ([]string, error) {
+func findSolutions(args []string) ([]string, error) {
 	result := []string{}
 	for _, name := range args {
 		if strings.HasSuffix(strings.ToLower(name), ".sln") {
@@ -34,20 +32,6 @@ func findSolution(args []string) ([]string, error) {
 		}
 	}
 	return result, nil
-}
-
-func FindSolution(args []string) (string, error) {
-	sln, err := findSolution(args)
-	if err != nil {
-		return "", err
-	}
-	if len(sln) < 1 {
-		return "", errors.New("no solution files")
-	}
-	if len(sln) >= 2 {
-		return "", fmt.Errorf("%s: too may solution files", strings.Join(sln, ", "))
-	}
-	return sln[0], nil
 }
 
 type Solution struct {
