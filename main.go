@@ -243,7 +243,7 @@ func _main() error {
 	if err != nil {
 		return err
 	}
-	for _, slnPath := range slnPaths {
+	for slnCount, slnPath := range slnPaths {
 		sln, err := NewSolution(slnPath)
 		if err != nil {
 			return fmt.Errorf("%s: %w", slnPath, err)
@@ -262,6 +262,11 @@ func _main() error {
 		if *flagListProductInline {
 			if err := listProductInline(sln, devenvPath, warning); err != nil {
 				return fmt.Errorf("%s: %w", slnPath, err)
+			}
+			if slnCount == len(slnPaths)-1 {
+				fmt.Println()
+			} else {
+				fmt.Print(" ")
 			}
 			continue
 		}

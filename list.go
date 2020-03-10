@@ -121,7 +121,6 @@ func listProductInline(sln *Solution, devenvPath string, warning io.Writer) erro
 			ofs = "\t"
 		}
 	}
-	fmt.Println()
 	return nil
 }
 
