@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	_ "github.com/mattn/getwild"
 	"github.com/zetamatta/go-numeric-compare"
 )
 
