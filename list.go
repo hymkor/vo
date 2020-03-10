@@ -138,10 +138,17 @@ func listProductLong(sln *Solution, devenvPath string, warning io.Writer) error 
 		return err
 	}
 	for proj, configToProduct := range projToConfigToProduct {
-		fmt.Printf("%s:\n", proj)
+		var buffer strings.Builder
+
+		fmt.Fprintf(&buffer, "%s:\n", proj)
 		for config, fname := range configToProduct {
-			fmt.Printf("  %s:\n    ", config)
-			showVer(fname, os.Stdout)
+			if fd, err := os.Open(fname); err == nil {
+				fd.Close()
+				fmt.Print(buffer.String())
+				buffer.Reset()
+				fmt.Printf("  %s:\n    ", config)
+				showVer(fname, os.Stdout)
+			}
 		}
 	}
 	return nil
