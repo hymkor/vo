@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/zetamatta/vf1s/peinfo"
-	"github.com/zetamatta/vf1s/projs"
+	"github.com/zetamatta/vo/peinfo"
+	"github.com/zetamatta/vo/projs"
 )
 
 const dotNetDLLType = "Library"
