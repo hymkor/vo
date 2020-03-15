@@ -1,4 +1,4 @@
-package main
+package solution
 
 import (
 	"bufio"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func findSolutions(args []string) ([]string, error) {
+func Find(args []string) ([]string, error) {
 	result := []string{}
 	for _, name := range args {
 		if strings.HasSuffix(strings.ToLower(name), ".sln") {
@@ -82,7 +82,7 @@ var rxProjectList = regexp.MustCompile(
 		`"([^"]+)"\s*,\s*` +
 		`"([^"]+)"`)
 
-func NewSolution(fname string) (*Solution, error) {
+func New(fname string) (*Solution, error) {
 	fd, err := os.Open(fname)
 	if err != nil {
 		return nil, err

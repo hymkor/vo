@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+
+	"github.com/zetamatta/vo/solution"
 )
 
-func eval(sln *Solution, devenvPath string, varname string) error {
+func eval(sln *solution.Solution, devenvPath, varname string) error {
 	projToConfigToProps, err := getProjToConfigToProps(sln, devenvPath, ioutil.Discard)
 	if err != nil {
 		return err

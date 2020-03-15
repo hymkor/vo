@@ -11,6 +11,7 @@ import (
 
 	"github.com/zetamatta/vo/peinfo"
 	"github.com/zetamatta/vo/projs"
+	"github.com/zetamatta/vo/solution"
 )
 
 const dotNetDLLType = "Library"
@@ -38,7 +39,7 @@ func withoutExt(fname string) string {
 	return fname[:len(fname)-len(filepath.Ext(fname))]
 }
 
-func getProjToConfigToProps(sln *Solution, devenvPath string, warning io.Writer) (map[string]map[string]projs.Properties, error) {
+func getProjToConfigToProps(sln *solution.Solution, devenvPath string, warning io.Writer) (map[string]map[string]projs.Properties, error) {
 	var vcTargetsPath string
 	if devenvPath != "" {
 		vcTargetsPath, _ = getVCTargetsPath(devenvPath)
@@ -71,7 +72,7 @@ func getProjToConfigToProps(sln *Solution, devenvPath string, warning io.Writer)
 	return projToConfigToProps, nil
 }
 
-func listupProduct(sln *Solution, devenvPath string, warning io.Writer) (map[string]map[string]string, error) {
+func listupProduct(sln *solution.Solution, devenvPath string, warning io.Writer) (map[string]map[string]string, error) {
 	projToConfigToProp, err := getProjToConfigToProps(sln, devenvPath, warning)
 	if err != nil {
 		return nil, err
@@ -109,7 +110,7 @@ func listupProduct(sln *Solution, devenvPath string, warning io.Writer) (map[str
 	return projToConfigToProduct, nil
 }
 
-func listProductInline(sln *Solution, devenvPath string, warning io.Writer) error {
+func listProductInline(sln *solution.Solution, devenvPath string, warning io.Writer) error {
 	projToConfigToProduct, err := listupProduct(sln, devenvPath, warning)
 	if err != nil {
 		return err
@@ -132,7 +133,7 @@ func showVer(fname string, w io.Writer) {
 	}
 }
 
-func listProductLong(sln *Solution, devenvPath string, warning io.Writer) error {
+func listProductLong(sln *solution.Solution, devenvPath string, warning io.Writer) error {
 	projToConfigToProduct, err := listupProduct(sln, devenvPath, warning)
 	if err != nil {
 		return err

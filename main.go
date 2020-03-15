@@ -13,6 +13,8 @@ import (
 
 	_ "github.com/mattn/getwild"
 	"github.com/zetamatta/go-numeric-compare"
+
+	"github.com/zetamatta/vo/solution"
 )
 
 func envToCom(envname string) (string, error) {
@@ -80,7 +82,7 @@ type xmlProjectT struct {
 	PlatformToolset []string `xml:"PropertyGroup>PlatformToolset"`
 }
 
-func maxToolsVersion(sln *Solution) (toolsVersion, platformToolset string) {
+func maxToolsVersion(sln *solution.Solution) (toolsVersion, platformToolset string) {
 	for projPath := range sln.Project {
 		xmlBin, err := ioutil.ReadFile(projPath)
 		if err == nil {
@@ -120,7 +122,7 @@ var platformToolSetToRequiredVisualStudio = map[string]string{
 
 // https://docs.microsoft.com/ja-jp/visualstudio/msbuild/msbuild-toolset-toolsversion?view=vs-2019
 
-func seekDevenv(sln *Solution, log io.Writer) (compath string, err error) {
+func seekDevenv(sln *solution.Solution, log io.Writer) (compath string, err error) {
 	// option to force
 	if *flag2019 {
 		compath, err = seek2019()
@@ -239,12 +241,12 @@ func _main() error {
 		return nil
 	}
 
-	slnPaths, err := findSolutions(args)
+	slnPaths, err := solution.Find(args)
 	if err != nil {
 		return err
 	}
 	for slnCount, slnPath := range slnPaths {
-		sln, err := NewSolution(slnPath)
+		sln, err := solution.New(slnPath)
 		if err != nil {
 			return fmt.Errorf("%s: %w", slnPath, err)
 		}
