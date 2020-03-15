@@ -81,9 +81,9 @@ func seekOneSolution(flags *vswhere.Flag, args []string, verbose io.Writer) (*Ta
 	return slns[0], nil
 }
 
-func seekConfig(c *cli.Context, sln *solution.Solution) string {
+func seekConfig(c *cli.Context, sln *solution.Solution) []string {
 	if conf := c.String("config"); conf != "" {
-		return conf
+		return []string{conf}
 	}
 
 	var filter func(string) bool
@@ -94,15 +94,16 @@ func seekConfig(c *cli.Context, sln *solution.Solution) string {
 	} else if c.Bool("r") {
 		filter = func(c string) bool { return strings.Contains(c, "release") }
 	} else {
-		return ""
+		return []string{}
 	}
 
+	confs := []string{}
 	for _, conf := range sln.Configuration {
 		if filter(strings.ToLower(conf)) {
-			return conf
+			confs = append(confs, conf)
 		}
 	}
-	return ""
+	return confs
 }
 
 func warning(c *cli.Context) io.Writer {
@@ -136,14 +137,44 @@ func build(c *cli.Context, action string) error {
 	if err != nil {
 		return err
 	}
-	conf := seekConfig(c, sln.Solution)
-	if conf == "" {
-		return nil
+	confs := seekConfig(c, sln.Solution)
+	for _, conf1 := range confs {
+		err = run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, action, conf1)
+		if err != nil {
+			return err
+		}
 	}
-	return run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, action, conf)
+	return nil
 }
 
 func mains() error {
+	buildOptions := []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "n",
+			Usage: "dry run",
+		},
+		&cli.BoolFlag{
+			Name:  "d",
+			Usage: "build configurations contains /Debug/",
+		},
+		&cli.BoolFlag{
+			Name:  "r",
+			Usage: "build configurations contains /Release/",
+		},
+		&cli.BoolFlag{
+			Name:  "a",
+			Usage: "build all configurations",
+		},
+		&cli.BoolFlag{
+			Name:  "re",
+			Usage: "rebuild",
+		},
+		&cli.StringFlag{
+			Name:  "c",
+			Usage: "specify the configuraion to build",
+		},
+	}
+
 	app := &cli.App{
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
@@ -167,36 +198,12 @@ func mains() error {
 				Usage: "use Visual Studio 2019",
 			},
 			&cli.BoolFlag{
-				Name:  "n",
-				Usage: "dry run",
-			},
-			&cli.BoolFlag{
-				Name:  "d",
-				Usage: "build configurations contains /Debug/",
-			},
-			&cli.BoolFlag{
-				Name:  "r",
-				Usage: "build configurations contains /Release/",
-			},
-			&cli.BoolFlag{
-				Name:  "a",
-				Usage: "build all configurations",
-			},
-			&cli.BoolFlag{
-				Name:  "re",
-				Usage: "rebuild",
-			},
-			&cli.BoolFlag{
 				Name:  "w",
 				Usage: "show warnings",
 			},
 			&cli.BoolFlag{
 				Name:  "v",
 				Usage: "verbose",
-			},
-			&cli.StringFlag{
-				Name:  "c",
-				Usage: "specify the configuraion to build",
 			},
 		},
 		Commands: []*cli.Command{
@@ -278,13 +285,15 @@ func mains() error {
 				},
 			},
 			{
-				Name: "build",
+				Name:  "build",
+				Flags: buildOptions,
 				Action: func(c *cli.Context) error {
 					return build(c, "/build")
 				},
 			},
 			{
-				Name: "rebuild",
+				Name:  "rebuild",
+				Flags: buildOptions,
 				Action: func(c *cli.Context) error {
 					return build(c, "/rebuild")
 				},
