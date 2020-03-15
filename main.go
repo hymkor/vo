@@ -14,25 +14,12 @@ import (
 	"github.com/zetamatta/vo/vswhere"
 )
 
-var flag2010 = flag.Bool("2010", false, "use Visual Studio 2010")
-var flag2013 = flag.Bool("2013", false, "use Visual Studio 2013")
-var flag2015 = flag.Bool("2015", false, "use Visual Studio 2015")
-var flag2017 = flag.Bool("2017", false, "use Visual Studio 2017")
-var flag2019 = flag.Bool("2019", false, "use Visual Studio 2019")
-
-func run(devenvPath string, param ...string) error {
-	cmd1 := exec.Command(devenvPath, param...)
-	cmd1.Stdin = os.Stdin
-	cmd1.Stdout = os.Stdout
-	cmd1.Stderr = os.Stderr
-	fmt.Printf("\"%s\" \"%s\"\n", devenvPath, strings.Join(param, "\" \""))
-	if *flagDryRun {
-		return nil
-	}
-	return cmd1.Run()
-}
-
 var (
+	flag2010              = flag.Bool("2010", false, "use Visual Studio 2010")
+	flag2013              = flag.Bool("2013", false, "use Visual Studio 2013")
+	flag2015              = flag.Bool("2015", false, "use Visual Studio 2015")
+	flag2017              = flag.Bool("2017", false, "use Visual Studio 2017")
+	flag2019              = flag.Bool("2019", false, "use Visual Studio 2019")
 	flagShowVer           = flag.String("showver", "", "show version")
 	flagListProductInline = flag.Bool("ls", false, "list products")
 	flagListProductLong   = flag.Bool("ll", false, "list products")
@@ -48,11 +35,19 @@ var (
 	flagEval              = flag.String("e", "", "eval variable")
 )
 
-func _main() error {
-	flag.Parse()
+func run(devenvPath string, param ...string) error {
+	cmd1 := exec.Command(devenvPath, param...)
+	cmd1.Stdin = os.Stdin
+	cmd1.Stdout = os.Stdout
+	cmd1.Stderr = os.Stderr
+	fmt.Printf("\"%s\" \"%s\"\n", devenvPath, strings.Join(param, "\" \""))
+	if *flagDryRun {
+		return nil
+	}
+	return cmd1.Run()
+}
 
-	args := flag.Args()
-
+func mains(args []string) error {
 	warning := ioutil.Discard
 	if *flagWarning {
 		warning = os.Stderr
@@ -153,7 +148,8 @@ func _main() error {
 }
 
 func main() {
-	if err := _main(); err != nil {
+	flag.Parse()
+	if err := mains(flag.Args()); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
