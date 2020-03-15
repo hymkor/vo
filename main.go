@@ -3,11 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	_ "github.com/mattn/getwild"
@@ -16,155 +14,11 @@ import (
 	"github.com/zetamatta/vo/vswhere"
 )
 
-func envToCom(envname string) (string, error) {
-	env := os.Getenv(envname)
-	if env == "" {
-		return "", fmt.Errorf("%%%s%% is not set.", envname)
-	}
-	env = strings.ReplaceAll(env, "Tools", "IDE")
-	com := filepath.Join(env, "devenv.com")
-	if fd, err := os.Open(com); err == nil {
-		fd.Close()
-		return com, nil
-	}
-	return "", fmt.Errorf("%s not found", com)
-}
-
-func seek2010() (string, error) {
-	return envToCom("VS100COMNTOOLS") // [10.0,11.0)
-}
-
-func seek2013() (string, error) {
-	return envToCom("VS120COMNTOOLS") // [12.0,13.0)
-}
-
-func seek2015() (string, error) {
-	return envToCom("VS140COMNTOOLS") // [14.0,15.0)
-}
-
-func seek2017() (string, error) {
-	return vswhere.ProductPath("-version", "[15.0,16.0)")
-}
-
-func seek2019() (string, error) {
-	return vswhere.ProductPath("-version", "[16.0,17.0)")
-}
-
-func seekLatest() (string, error) {
-	return vswhere.ProductPath("-latest")
-}
-
-var versionToSeekfunc = map[string]func() (string, error){
-	"2010": seek2010,
-	"2013": seek2013,
-	"2015": seek2015,
-	"2017": seek2017,
-	"2019": seek2019,
-}
-
-var searchList = []func() (string, error){
-	seekLatest,
-	seek2015,
-	seek2013,
-	seek2010,
-}
-
 var flag2010 = flag.Bool("2010", false, "use Visual Studio 2010")
 var flag2013 = flag.Bool("2013", false, "use Visual Studio 2013")
 var flag2015 = flag.Bool("2015", false, "use Visual Studio 2015")
 var flag2017 = flag.Bool("2017", false, "use Visual Studio 2017")
 var flag2019 = flag.Bool("2019", false, "use Visual Studio 2019")
-
-var toolsVersionToRequiredVisualStudio = map[string]string{
-	"4.0":  "2010",
-	"12.0": "2013",
-	"14.0": "2015",
-	"15.0": "2017",
-}
-
-var platformToolSetToRequiredVisualStudio = map[string]string{
-	"v90":     "2008",
-	"v100":    "2010",
-	"v120":    "2013",
-	"v120_xp": "2013",
-	"v140":    "2017",
-	"v141":    "2017",
-	"v141_xp": "2017",
-}
-
-// https://docs.microsoft.com/ja-jp/visualstudio/msbuild/msbuild-toolset-toolsversion?view=vs-2019
-
-func seekDevenv(sln *solution.Solution, log io.Writer) (compath string, err error) {
-	// option to force
-	if *flag2019 {
-		compath, err = seek2019()
-	}
-	if *flag2017 {
-		compath, err = seek2017()
-	}
-	if *flag2015 {
-		compath, err = seek2015()
-	}
-	if *flag2013 {
-		compath, err = seek2013()
-	}
-	if *flag2010 {
-		compath, err = seek2010()
-	}
-	if err == nil && compath != "" {
-		return
-	}
-	if err != nil {
-		fmt.Fprintln(log, err)
-		fmt.Fprintln(log, "look for the other Visual Studio.")
-	}
-
-	// see project-files
-	toolsVersion, platformToolSet := sln.MaxToolsVersion()
-	requiredVisualStudio := toolsVersionToRequiredVisualStudio[toolsVersion]
-
-	if t, ok := platformToolSetToRequiredVisualStudio[platformToolSet]; ok {
-		if t > requiredVisualStudio {
-			requiredVisualStudio = t
-		}
-	}
-
-	if v := sln.GetMinimumVersion(); v > requiredVisualStudio {
-		requiredVisualStudio = v
-	}
-
-	if f := versionToSeekfunc[requiredVisualStudio]; f != nil {
-		fmt.Fprintf(log, "%s: comment version: %s\n", sln.Path, sln.CommentVersion)
-		fmt.Fprintf(log, "%s: default version: %s\n", sln.Path, sln.DefaultVersion)
-		fmt.Fprintf(log, "%s: minimum version: %s\n", sln.Path, sln.MinimumVersion)
-		fmt.Fprintf(log, "%s: required ToolsVersion is '%s'.\n", sln.Path, toolsVersion)
-		if platformToolSet != "" {
-			fmt.Fprintf(log, "Required PlatformToolSet is '%s'.\n", platformToolSet)
-		}
-		fmt.Fprintf(log, "%s: try to use Visual Studio %s.\n", sln.Path, requiredVisualStudio)
-		compath, err = f()
-		if compath != "" && err == nil {
-			return
-		}
-		if err != nil {
-			fmt.Fprintln(log, err)
-			fmt.Fprintln(log, "look for other versions of Visual Studio.")
-		}
-	}
-
-	// latest version
-	for _, f := range searchList {
-		compath, err = f()
-		if compath != "" && err == nil {
-			fmt.Fprintf(log, "found '%s'\n", compath)
-			return
-		}
-		if err != nil {
-			fmt.Fprintln(log, err)
-		}
-	}
-	return "", io.EOF
-}
 
 func run(devenvPath string, param ...string) error {
 	cmd1 := exec.Command(devenvPath, param...)
@@ -223,7 +77,13 @@ func _main() error {
 			return fmt.Errorf("%s: %w", slnPath, err)
 		}
 
-		devenvPath, err := seekDevenv(sln, verbose)
+		devenvPath, err := vswhere.Flag{
+			V2010: *flag2010,
+			V2013: *flag2013,
+			V2015: *flag2015,
+			V2017: *flag2017,
+			V2019: *flag2019,
+		}.SeekDevenv(sln, verbose)
 		if err != nil {
 			return fmt.Errorf("%s: devenv.com not found", slnPath)
 		}
