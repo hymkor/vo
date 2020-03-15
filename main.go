@@ -1,155 +1,305 @@
 package main
 
 import (
-	"flag"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 
 	_ "github.com/mattn/getwild"
+	"github.com/urfave/cli/v2"
 
 	"github.com/zetamatta/vo/solution"
 	"github.com/zetamatta/vo/vswhere"
 )
 
-var (
-	flag2010              = flag.Bool("2010", false, "use Visual Studio 2010")
-	flag2013              = flag.Bool("2013", false, "use Visual Studio 2013")
-	flag2015              = flag.Bool("2015", false, "use Visual Studio 2015")
-	flag2017              = flag.Bool("2017", false, "use Visual Studio 2017")
-	flag2019              = flag.Bool("2019", false, "use Visual Studio 2019")
-	flagShowVer           = flag.String("showver", "", "show version")
-	flagListProductInline = flag.Bool("ls", false, "list products")
-	flagListProductLong   = flag.Bool("ll", false, "list products")
-	flagDryRun            = flag.Bool("n", false, "dry run")
-	flagDebug             = flag.Bool("d", false, "build configurations contains /Debug/")
-	flagRelease           = flag.Bool("r", false, "build configurations contains /Release/")
-	flagAll               = flag.Bool("a", false, "build all configurations")
-	flagRebuild           = flag.Bool("re", false, "rebuild")
-	flagIde               = flag.Bool("i", false, "open ide")
-	flagConfig            = flag.String("c", "", "specify the configuraion to build")
-	flagWarning           = flag.Bool("w", false, "show warnings")
-	flagVerbose           = flag.Bool("v", false, "verbose")
-	flagEval              = flag.String("e", "", "eval variable")
-)
-
-func run(devenvPath string, param ...string) error {
+func run(dryrun bool, devenvPath string, param ...string) error {
 	cmd1 := exec.Command(devenvPath, param...)
 	cmd1.Stdin = os.Stdin
 	cmd1.Stdout = os.Stdout
 	cmd1.Stderr = os.Stderr
 	fmt.Printf("\"%s\" \"%s\"\n", devenvPath, strings.Join(param, "\" \""))
-	if *flagDryRun {
+	if dryrun {
 		return nil
 	}
 	return cmd1.Run()
 }
 
-func mains(args []string) error {
-	warning := ioutil.Discard
-	if *flagWarning {
-		warning = os.Stderr
-	}
-	verbose := ioutil.Discard
-	if *flagVerbose {
-		verbose = os.Stderr
-	}
+type TargetSolution struct {
+	*solution.Solution
+	SolutionPath string
+	DevenvPath   string
+}
 
-	if *flagShowVer != "" {
-		showVer(*flagShowVer, os.Stdout)
-		return nil
-	}
-
+func seekSolutions(flags *vswhere.Flag, args []string) ([]*TargetSolution, error) {
 	slnPaths, err := solution.Find(args)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	for slnCount, slnPath := range slnPaths {
+	targets := make([]*TargetSolution, 0, len(slnPaths))
+	for _, slnPath := range slnPaths {
 		sln, err := solution.New(slnPath)
 		if err != nil {
-			return fmt.Errorf("%s: %w", slnPath, err)
+			return nil, fmt.Errorf("%s: %w", slnPath, err)
 		}
 
-		devenvPath, err := vswhere.Flag{
-			V2010: *flag2010,
-			V2013: *flag2013,
-			V2015: *flag2015,
-			V2017: *flag2017,
-			V2019: *flag2019,
-		}.SeekDevenv(sln, verbose)
+		devenvPath, err := flags.SeekDevenv(sln, os.Stdout)
 		if err != nil {
-			return fmt.Errorf("%s: devenv.com not found", slnPath)
-		}
-		if *flagEval != "" {
-			if err := eval(sln, devenvPath, *flagEval); err != nil {
-				return fmt.Errorf("%s: %w", slnPath, err)
-			}
-			continue
-		}
-		if *flagListProductInline {
-			if err := listProductInline(sln, devenvPath, warning); err != nil {
-				return fmt.Errorf("%s: %w", slnPath, err)
-			}
-			if slnCount == len(slnPaths)-1 {
-				fmt.Println()
-			} else {
-				fmt.Print(" ")
-			}
-			continue
-		}
-		if *flagListProductLong {
-			if err := listProductLong(sln, devenvPath, warning); err != nil {
-				return fmt.Errorf("%s: %w", slnPath, err)
-			}
-			continue
+			return nil, fmt.Errorf("%s: devenv.com not found", slnPath)
 		}
 
-		// Below code are executed when only one solution file exists.
-		if len(slnPaths) >= 2 {
-			return fmt.Errorf("%s: too many solution files", strings.Join(slnPaths, " "))
-		}
-		if *flagIde {
-			if err := run(devenvPath, slnPath); err != nil {
-				return fmt.Errorf("%s: %w", slnPath, err)
-			}
-			continue
-		}
-		action := "/build"
-		if *flagRebuild {
-			action = "/rebuild"
-		}
-		if *flagConfig != "" {
-			return run(devenvPath, slnPath, action, *flagConfig)
-		}
+		targets = append(targets, &TargetSolution{
+			SolutionPath: slnPath,
+			DevenvPath:   devenvPath,
+			Solution:     sln,
+		})
+	}
+	return targets, nil
+}
 
-		var filter func(string) bool
-		if *flagAll {
-			filter = func(c string) bool { return true }
-		} else if *flagDebug {
-			filter = func(c string) bool { return strings.Contains(c, "debug") }
-		} else if *flagRelease {
-			filter = func(c string) bool { return strings.Contains(c, "release") }
-		} else {
-			flag.PrintDefaults()
-			return nil
-		}
-
-		for _, conf := range sln.Configuration {
-			if filter(strings.ToLower(conf)) {
-				if err := run(devenvPath, slnPath, action, conf); err != nil {
-					return err
-				}
+func seekOneSolution(flags *vswhere.Flag, args []string) (*TargetSolution, error) {
+	slns, err := seekSolutions(flags, args)
+	if err != nil {
+		return nil, err
+	}
+	if len(slns) <= 0 {
+		return nil, errors.New("no solution files")
+	}
+	if len(slns) >= 2 {
+		var buffer strings.Builder
+		for _, s := range slns {
+			if buffer.Len() > 0 {
+				buffer.WriteByte(' ')
 			}
+			buffer.WriteString(s.SolutionPath)
+		}
+		return nil, fmt.Errorf("%s: too many solution files", buffer.String())
+	}
+	return slns[0], nil
+}
+
+func seekConfig(c *cli.Context, sln *solution.Solution) string {
+	if conf := c.String("config"); conf != "" {
+		return conf
+	}
+
+	var filter func(string) bool
+	if c.Bool("a") {
+		filter = func(c string) bool { return true }
+	} else if c.Bool("d") {
+		filter = func(c string) bool { return strings.Contains(c, "debug") }
+	} else if c.Bool("r") {
+		filter = func(c string) bool { return strings.Contains(c, "release") }
+	} else {
+		return ""
+	}
+
+	for _, conf := range sln.Configuration {
+		if filter(strings.ToLower(conf)) {
+			return conf
 		}
 	}
-	return nil
+	return ""
+}
+
+func warning(c *cli.Context) io.Writer {
+	w := ioutil.Discard
+	if c.Bool("w") {
+		w = os.Stderr
+	}
+	return w
+}
+
+func verbose(c *cli.Context) io.Writer {
+	v := ioutil.Discard
+	if c.Bool("v") {
+		v = os.Stderr
+	}
+	return v
+}
+
+func context2flag(c *cli.Context) *vswhere.Flag {
+	return &vswhere.Flag{
+		V2017: c.Bool("2017"),
+		V2019: c.Bool("2019"),
+		V2015: c.Bool("2015"),
+		V2013: c.Bool("2013"),
+		V2010: c.Bool("2010"),
+	}
+}
+
+func mains() error {
+	app := &cli.App{
+		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:  "2010",
+				Usage: "use Visual Studio 2010",
+			},
+			&cli.BoolFlag{
+				Name:  "2013",
+				Usage: "use Visual Studio 2013",
+			},
+			&cli.BoolFlag{
+				Name:  "2015",
+				Usage: "use Visual Studio 2015",
+			},
+			&cli.BoolFlag{
+				Name:  "2017",
+				Usage: "use Visual Studio 2017",
+			},
+			&cli.BoolFlag{
+				Name:  "2019",
+				Usage: "use Visual Studio 2019",
+			},
+			&cli.BoolFlag{
+				Name:  "n",
+				Usage: "dry run",
+			},
+			&cli.BoolFlag{
+				Name:  "d",
+				Usage: "build configurations contains /Debug/",
+			},
+			&cli.BoolFlag{
+				Name:  "r",
+				Usage: "build configurations contains /Release/",
+			},
+			&cli.BoolFlag{
+				Name:  "a",
+				Usage: "build all configurations",
+			},
+			&cli.BoolFlag{
+				Name:  "re",
+				Usage: "rebuild",
+			},
+			&cli.BoolFlag{
+				Name:  "w",
+				Usage: "show warnings",
+			},
+			&cli.BoolFlag{
+				Name:  "v",
+				Usage: "verbose",
+			},
+			&cli.StringFlag{
+				Name:  "c",
+				Usage: "specify the configuraion to build",
+			},
+		},
+		Commands: []*cli.Command{
+			{
+				Name: "showver",
+				Action: func(c *cli.Context) error {
+					for _, s := range c.Args().Slice() {
+						showVer(s, os.Stdout)
+					}
+					return nil
+				},
+			},
+			{
+				Name: "eval",
+				Action: func(c *cli.Context) error {
+					sln, err := seekOneSolution(context2flag(c), c.Args().Slice())
+					if err != nil {
+						return err
+					}
+					for _, s := range c.Args().Slice() {
+						if !strings.HasSuffix(s, ".sln") {
+							if err := eval(sln.Solution, sln.DevenvPath, s); err != nil {
+								return fmt.Errorf("%s: %w", sln.SolutionPath, err)
+							}
+						}
+					}
+					return nil
+				},
+			},
+			{
+				Name: "ls",
+				Action: func(c *cli.Context) error {
+					slns, err := seekSolutions(context2flag(c), c.Args().Slice())
+					if err != nil {
+						return err
+					}
+					for i, sln := range slns {
+						err = listProductInline(sln.Solution, sln.DevenvPath, os.Stdout)
+						if err != nil {
+							return fmt.Errorf("%s: %w", sln.SolutionPath, err)
+						}
+						if i == len(slns)-1 {
+							fmt.Println()
+						} else {
+							fmt.Print(" ")
+						}
+					}
+					return nil
+				},
+			},
+			{
+				Name: "list",
+				Action: func(c *cli.Context) error {
+					slns, err := seekSolutions(context2flag(c), c.Args().Slice())
+					if err != nil {
+						return err
+					}
+					for _, sln := range slns {
+						err := listProductLong(sln.Solution, sln.DevenvPath, os.Stdout)
+						if err != nil {
+							return fmt.Errorf("%s: %w", sln.SolutionPath, err)
+						}
+					}
+					return nil
+				},
+			},
+			{
+				Name: "ide",
+				Action: func(c *cli.Context) error {
+					sln, err := seekOneSolution(context2flag(c), c.Args().Slice())
+					if err != nil {
+						return err
+					}
+					err = run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath)
+					if err != nil {
+						return fmt.Errorf("%s: %w", sln.SolutionPath, err)
+					}
+					return nil
+				},
+			},
+			{
+				Name: "build",
+				Action: func(c *cli.Context) error {
+					sln, err := seekOneSolution(context2flag(c), c.Args().Slice())
+					if err != nil {
+						return err
+					}
+					conf := seekConfig(c, sln.Solution)
+					if conf == "" {
+						return nil
+					}
+					return run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, "build", conf)
+				},
+			},
+			{
+				Name: "rebuild",
+				Action: func(c *cli.Context) error {
+					sln, err := seekOneSolution(context2flag(c), c.Args().Slice())
+					if err != nil {
+						return err
+					}
+					conf := seekConfig(c, sln.Solution)
+					if conf == "" {
+						return nil
+					}
+					return run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, "rebuild", conf)
+				},
+			},
+		},
+	}
+	return app.Run(os.Args)
 }
 
 func main() {
-	flag.Parse()
-	if err := mains(flag.Args()); err != nil {
+	if err := mains(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
