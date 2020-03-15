@@ -2,9 +2,13 @@ package solution
 
 import (
 	"bufio"
+	"encoding/xml"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/zetamatta/go-numeric-compare"
 )
 
 func Find(args []string) ([]string, error) {
@@ -130,4 +134,31 @@ func New(fname string) (*Solution, error) {
 		block(text, strings.Fields(text))
 	}
 	return sln, nil
+}
+
+type xmlProjectT struct {
+	XMLName         xml.Name `xml:"Project"`
+	ToolsVersion    string   `xml:"ToolsVersion,attr"`
+	PlatformToolset []string `xml:"PropertyGroup>PlatformToolset"`
+}
+
+func (sln *Solution) MaxToolsVersion() (toolsVersion, platformToolset string) {
+	for projPath := range sln.Project {
+		xmlBin, err := ioutil.ReadFile(projPath)
+		if err == nil {
+			var xmlProject xmlProjectT
+			if xml.Unmarshal(xmlBin, &xmlProject) == nil {
+				v := xmlProject.ToolsVersion
+				if numeric.Compare(toolsVersion, v) <= 0 {
+					toolsVersion = v
+				}
+				for _, v := range xmlProject.PlatformToolset {
+					if numeric.Compare(platformToolset, v) < 0 {
+						platformToolset = v
+					}
+				}
+			}
+		}
+	}
+	return
 }

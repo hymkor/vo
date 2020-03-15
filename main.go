@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/xml"
 	"flag"
 	"fmt"
 	"io"
@@ -12,7 +11,6 @@ import (
 	"strings"
 
 	_ "github.com/mattn/getwild"
-	"github.com/zetamatta/go-numeric-compare"
 
 	"github.com/zetamatta/vo/solution"
 	"github.com/zetamatta/vo/vswhere"
@@ -77,33 +75,6 @@ var flag2015 = flag.Bool("2015", false, "use Visual Studio 2015")
 var flag2017 = flag.Bool("2017", false, "use Visual Studio 2017")
 var flag2019 = flag.Bool("2019", false, "use Visual Studio 2019")
 
-type xmlProjectT struct {
-	XMLName         xml.Name `xml:"Project"`
-	ToolsVersion    string   `xml:"ToolsVersion,attr"`
-	PlatformToolset []string `xml:"PropertyGroup>PlatformToolset"`
-}
-
-func maxToolsVersion(sln *solution.Solution) (toolsVersion, platformToolset string) {
-	for projPath := range sln.Project {
-		xmlBin, err := ioutil.ReadFile(projPath)
-		if err == nil {
-			var xmlProject xmlProjectT
-			if xml.Unmarshal(xmlBin, &xmlProject) == nil {
-				v := xmlProject.ToolsVersion
-				if numeric.Compare(toolsVersion, v) <= 0 {
-					toolsVersion = v
-				}
-				for _, v := range xmlProject.PlatformToolset {
-					if numeric.Compare(platformToolset, v) < 0 {
-						platformToolset = v
-					}
-				}
-			}
-		}
-	}
-	return
-}
-
 var toolsVersionToRequiredVisualStudio = map[string]string{
 	"4.0":  "2010",
 	"12.0": "2013",
@@ -149,7 +120,7 @@ func seekDevenv(sln *solution.Solution, log io.Writer) (compath string, err erro
 	}
 
 	// see project-files
-	toolsVersion, platformToolSet := maxToolsVersion(sln)
+	toolsVersion, platformToolSet := sln.MaxToolsVersion()
 	requiredVisualStudio := toolsVersionToRequiredVisualStudio[toolsVersion]
 
 	if t, ok := platformToolSetToRequiredVisualStudio[platformToolSet]; ok {
