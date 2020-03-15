@@ -131,6 +131,18 @@ func context2flag(c *cli.Context) *vswhere.Flag {
 	}
 }
 
+func build(c *cli.Context, action string) error {
+	sln, err := seekOneSolution(context2flag(c), c.Args().Slice())
+	if err != nil {
+		return err
+	}
+	conf := seekConfig(c, sln.Solution)
+	if conf == "" {
+		return nil
+	}
+	return run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, action, conf)
+}
+
 func mains() error {
 	app := &cli.App{
 		Flags: []cli.Flag{
@@ -268,29 +280,13 @@ func mains() error {
 			{
 				Name: "build",
 				Action: func(c *cli.Context) error {
-					sln, err := seekOneSolution(context2flag(c), c.Args().Slice())
-					if err != nil {
-						return err
-					}
-					conf := seekConfig(c, sln.Solution)
-					if conf == "" {
-						return nil
-					}
-					return run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, "/build", conf)
+					return build(c, "/build")
 				},
 			},
 			{
 				Name: "rebuild",
 				Action: func(c *cli.Context) error {
-					sln, err := seekOneSolution(context2flag(c), c.Args().Slice())
-					if err != nil {
-						return err
-					}
-					conf := seekConfig(c, sln.Solution)
-					if conf == "" {
-						return nil
-					}
-					return run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, "/rebuild", conf)
+					return build(c, "/rebuild")
 				},
 			},
 		},
