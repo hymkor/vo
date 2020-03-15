@@ -34,7 +34,7 @@ type TargetSolution struct {
 	DevenvPath   string
 }
 
-func seekSolutions(flags *vswhere.Flag, args []string) ([]*TargetSolution, error) {
+func seekSolutions(flags *vswhere.Flag, args []string, verbose io.Writer) ([]*TargetSolution, error) {
 	slnPaths, err := solution.Find(args)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func seekSolutions(flags *vswhere.Flag, args []string) ([]*TargetSolution, error
 			return nil, fmt.Errorf("%s: %w", slnPath, err)
 		}
 
-		devenvPath, err := flags.SeekDevenv(sln, os.Stdout)
+		devenvPath, err := flags.SeekDevenv(sln, verbose)
 		if err != nil {
 			return nil, fmt.Errorf("%s: devenv.com not found", slnPath)
 		}
@@ -60,8 +60,8 @@ func seekSolutions(flags *vswhere.Flag, args []string) ([]*TargetSolution, error
 	return targets, nil
 }
 
-func seekOneSolution(flags *vswhere.Flag, args []string) (*TargetSolution, error) {
-	slns, err := seekSolutions(flags, args)
+func seekOneSolution(flags *vswhere.Flag, args []string, verbose io.Writer) (*TargetSolution, error) {
+	slns, err := seekSolutions(flags, args, verbose)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func context2flag(c *cli.Context) *vswhere.Flag {
 }
 
 func build(c *cli.Context, action string) error {
-	sln, err := seekOneSolution(context2flag(c), c.Args().Slice())
+	sln, err := seekOneSolution(context2flag(c), c.Args().Slice(), verbose(c))
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func mains() error {
 			{
 				Name: "eval",
 				Action: func(c *cli.Context) error {
-					sln, err := seekOneSolution(context2flag(c), c.Args().Slice())
+					sln, err := seekOneSolution(context2flag(c), c.Args().Slice(), verbose(c))
 					if err != nil {
 						return err
 					}
@@ -229,7 +229,7 @@ func mains() error {
 			{
 				Name: "ls",
 				Action: func(c *cli.Context) error {
-					slns, err := seekSolutions(context2flag(c), c.Args().Slice())
+					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), verbose(c))
 					if err != nil {
 						return err
 					}
@@ -250,7 +250,7 @@ func mains() error {
 			{
 				Name: "list",
 				Action: func(c *cli.Context) error {
-					slns, err := seekSolutions(context2flag(c), c.Args().Slice())
+					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), verbose(c))
 					if err != nil {
 						return err
 					}
@@ -266,7 +266,7 @@ func mains() error {
 			{
 				Name: "ide",
 				Action: func(c *cli.Context) error {
-					sln, err := seekOneSolution(context2flag(c), c.Args().Slice())
+					sln, err := seekOneSolution(context2flag(c), c.Args().Slice(), verbose(c))
 					if err != nil {
 						return err
 					}
