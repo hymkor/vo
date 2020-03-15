@@ -234,7 +234,7 @@ func mains() error {
 						return err
 					}
 					for i, sln := range slns {
-						err = listProductInline(sln.Solution, sln.DevenvPath, os.Stdout)
+						err = listProductInline(sln.Solution, sln.DevenvPath, warning(c))
 						if err != nil {
 							return fmt.Errorf("%s: %w", sln.SolutionPath, err)
 						}
@@ -255,7 +255,7 @@ func mains() error {
 						return err
 					}
 					for _, sln := range slns {
-						err := listProductLong(sln.Solution, sln.DevenvPath, os.Stdout)
+						err := listProductLong(sln.Solution, sln.DevenvPath, warning(c))
 						if err != nil {
 							return fmt.Errorf("%s: %w", sln.SolutionPath, err)
 						}
