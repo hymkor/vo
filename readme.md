@@ -1,4 +1,4 @@
-vf1s is the tool which supports these works all on the command line.
+vo.exe is the tool which supports these works all on the command line.
 
 - Build projects for the any-version's Visual Studio.
 - Show the product information: version, timestamp and check-sum.
@@ -20,7 +20,7 @@ Build the release version
 -------------------------
 
 ```
-$ vf1s.exe -v -r WorkReport.sln
+$ vo -v -r WorkReport.sln
 WorkReport.sln: word '2010' found.
 %VS100COMNTOOLS% is not set.
 look for other versions of Visual Studio.
