@@ -15,6 +15,7 @@ import (
 	"github.com/zetamatta/go-numeric-compare"
 
 	"github.com/zetamatta/vo/solution"
+	"github.com/zetamatta/vo/vswhere"
 )
 
 func envToCom(envname string) (string, error) {
@@ -44,15 +45,15 @@ func seek2015() (string, error) {
 }
 
 func seek2017() (string, error) {
-	return ProductPath("-version", "[15.0,16.0)")
+	return vswhere.ProductPath("-version", "[15.0,16.0)")
 }
 
 func seek2019() (string, error) {
-	return ProductPath("-version", "[16.0,17.0)")
+	return vswhere.ProductPath("-version", "[16.0,17.0)")
 }
 
 func seekLatest() (string, error) {
-	return ProductPath("-latest")
+	return vswhere.ProductPath("-latest")
 }
 
 var versionToSeekfunc = map[string]func() (string, error){
