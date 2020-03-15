@@ -276,7 +276,7 @@ func mains() error {
 					if conf == "" {
 						return nil
 					}
-					return run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, "build", conf)
+					return run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, "/build", conf)
 				},
 			},
 			{
@@ -290,7 +290,7 @@ func mains() error {
 					if conf == "" {
 						return nil
 					}
-					return run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, "rebuild", conf)
+					return run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, "/rebuild", conf)
 				},
 			},
 		},
