@@ -1,4 +1,4 @@
-`vo.exe` reads your `*.sln` and `*.*proj" files, finds the appropriate
+`vo.exe` reads your `*.sln` and `*.*proj` files, finds the appropriate
 devenv.com's fullpath and calls it for these purpose.
 
 - Start Visual Studio (`vo ide`)
