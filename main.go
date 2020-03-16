@@ -249,7 +249,7 @@ func mains() error {
 			},
 			{
 				Name:  "ls",
-				Usage: "list up executables inline",
+				Usage: "list up expected executables inline",
 				Action: func(c *cli.Context) error {
 					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), getVerboseOut(c))
 					if err != nil {
@@ -271,7 +271,7 @@ func mains() error {
 			},
 			{
 				Name:  "list",
-				Usage: "list up executables and thier version-information with long format",
+				Usage: "list up existing executables and thier version-information with long format",
 				Action: func(c *cli.Context) error {
 					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), getVerboseOut(c))
 					if err != nil {
