@@ -1,8 +1,38 @@
-vo.exe is the tool which supports these works all on the command line.
+`vo.exe` reads your `*.sln` and `*.*proj" files, finds the appropriate
+devenv.com's fullpath and calls it for these purpose.
 
-- Build projects for the any-version's Visual Studio.
-- Show the product information: version, timestamp and check-sum.
-- The library to parse project-xml-files and portable-executables.
+- Start Visual Studio (`vo ide`)
+- Build the application (`vo build`)
+- Show the executables' information. (`vo ls` / `vo list`)
+
+```
+$ vo help
+NAME:
+   vo.exe - Visual studio solution commandline Operator
+
+USAGE:
+   vo.exe [global options] command [command options] [arguments...]
+
+COMMANDS:
+   ide      start visual-studio associated the solution with no options
+   build    call devenv.com associated the solution with /build option
+   rebuild  call devenv.com associated the solution with /rebuild option
+   ls       list up executables inline
+   list     list up executables and thier version-information with long format
+   showver  Show the version information for executables given by parameters
+   eval     eval the equation given by parameter
+   help, h  Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --2010      use Visual Studio 2010 (default: false)
+   --2013      use Visual Studio 2013 (default: false)
+   --2015      use Visual Studio 2015 (default: false)
+   --2017      use Visual Studio 2017 (default: false)
+   --2019      use Visual Studio 2019 (default: false)
+   -w          show warnings (default: false)
+   -v          verbose (default: false)
+   --help, -h  show help (default: false)
+```
 
 Build projects
 ==============
@@ -16,36 +46,42 @@ Look for devenv.com and call it to build a product.
 - for 2019, call `vswhere -version [16.0,17.0)`
 
 
-Build the release version
--------------------------
+Build with the default configuration
+------------------------------------
 
 ```
-$ vo -v -r WorkReport.sln
-WorkReport.sln: word '2010' found.
-%VS100COMNTOOLS% is not set.
-look for other versions of Visual Studio.
-found 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.com'
-"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.com" "WorkReport.sln" "/build" "Release|x86"
+$ vo -v build
+WorkReport.sln: comment version: 2010
+WorkReport.sln: default version:
+WorkReport.sln: minimum version:
+WorkReport.sln: required ToolsVersion is '4.0'.
+WorkReport.sln: try to use Visual Studio 2010.
+"C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE\devenv.com" "WorkReport.sln" "/build"
 
-Microsoft Visual Studio 2019 RC バージョン 16.0.29009.5。
+Microsoft(R) Visual Studio Version 10.0.40219.1.
 Copyright (C) Microsoft Corp. All rights reserved.
-========== ビルド: 0 正常終了、0 失敗、1 更新不要、0 スキップ ==========
+------ ビルド開始: プロジェクト: WorkReport, 構成: Release x86 ------
+  WorkReport -> Z:\Share\Src\github.com\xxxxxxxx\workreport\bin\Release\WorkReport.exe
+========== ビルド: 正常終了または最新の状態 1、失敗 0、スキップ 0 ==========
 ```
 
 Build the debug version
 -----------------------
 
 ```
-$ vf1s.exe -v -d
-WorkReport.sln: word '2010' found.
-%VS100COMNTOOLS% is not set.
-look for other versions of Visual Studio.
-found 'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.com'
-"C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.com" "WorkReport.sln" "/build" "Debug|x86"
+$ vo -v build -d
+WorkReport.sln: comment version: 2010
+WorkReport.sln: default version:
+WorkReport.sln: minimum version:
+WorkReport.sln: required ToolsVersion is '4.0'.
+WorkReport.sln: try to use Visual Studio 2010.
+"C:\Program Files (x86)\Microsoft Visual Studio 10.0\Common7\IDE\devenv.com" "WorkReport.sln" "/build" "Debug|x86"
 
-Microsoft Visual Studio 2019 RC バージョン 16.0.29009.5。
+Microsoft(R) Visual Studio Version 10.0.40219.1.
 Copyright (C) Microsoft Corp. All rights reserved.
-========== ビルド: 0 正常終了、0 失敗、1 更新不要、0 スキップ ==========
+------ ビルド開始: プロジェクト: WorkReport, 構成: Debug x86 ------
+  WorkReport -> Z:\Share\Src\github.com\xxxxxxxx\workreport\bin\Debug\WorkReport.exe
+========== ビルド: 正常終了または最新の状態 1、失敗 0、スキップ 0 ==========
 ```
 
 When the solution filename is omitted, use the solution file on the current directory.
@@ -57,7 +93,7 @@ Show files in-line (separated by TAB)
 -----------------------------------
 
 ```
-$ vf1s.exe -ls
+$ vo ls
 "bin\Debug\WorkReport.exe"      "bin\Release\WorkReport.exe"
 ```
 
@@ -67,13 +103,16 @@ Show files multi-line with some information.
 --------------------------------------------
 
 ```
-$ vf1s.exe -ll
-bin\Debug\WorkReport.exe
-        1.0.0.11          1.0.0.11          2019-07-14 17:53:21
-        47104 bytes  md5sum:1a91d74d9594b2bc575c5bf5327dfa5e
-bin\Release\WorkReport.exe
-        1.0.0.11          1.0.0.11          2019-07-14 17:53:26
-        44032 bytes  md5sum:6bfb25c0bb155e6a4b1c05e152eb9be0
+$ vo list
+WorkReport.csproj:
+  Release|x86:
+    bin\Release\WorkReport.exe
+        1.0.0.16          1.0.0.16          2020-03-16 11:42:44
+        50688 bytes  md5sum:1fcbf90db2a4824cac4aa8e936f94ce6
+  Debug|x86:
+    bin\Debug\WorkReport.exe
+        1.0.0.16          1.0.0.16          2020-03-16 11:43:59
+        53760 bytes  md5sum:4802019ffd5d9b1f93cb21ac77f1546d
 ```
 
 These files are built by the solution files in the current directory.
@@ -83,53 +122,8 @@ Show files specified by path
 ----------------------------
 
 ```
-$ vf1s.exe -showver bin\Release\WorkReport.exe
+$ vo showver bin\Release\WorkReport.exe
 bin\Release\WorkReport.exe
-        1.0.0.11          1.0.0.11          2019-07-14 17:53:26
-        44032 bytes  md5sum:6bfb25c0bb155e6a4b1c05e152eb9be0
+        1.0.0.16          1.0.0.16          2020-03-16 11:42:44
+        50688 bytes  md5sum:1fcbf90db2a4824cac4aa8e936f94ce6
 ```
-
-Help
-====
-
-```
-$ vf1s.exe -h
-Usage of vf1s.exe:
-  -2010
-        use Visual Studio 2010
-  -2013
-        use Visual Studio 2013
-  -2015
-        use Visual Studio 2015
-  -2017
-        use Visual Studio 2017
-  -2019
-        use Visual Studio 2019
-  -a    build all configurations
-  -c string
-        specify the configuraion to build
-  -d    build configurations contains /Debug/
-  -i    open ide
-  -ll
-        list products
-  -ls
-        list products
-  -n    dry run
-  -r    build configurations contains /Release/
-  -re
-        rebuild
-  -showver string
-        show version
-  -v    verbose
-  -w    show warnings
-```
-
-The library
-===========
-
-This product has these sub-package.
-
-- [peinfo](https://godoc.org/github.com/zetamatta/vf1s/peinfo)
-    - The library which gets version information from binary imag of executables.
-- [projs](https://godoc.org/github.com/zetamatta/vf1s/projs)
-    - The library which parses `*.vcxproj`, `*.vbproj` and `*.csproj`.
