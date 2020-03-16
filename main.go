@@ -124,11 +124,12 @@ func getVerboseOut(c *cli.Context) io.Writer {
 
 func context2flag(c *cli.Context) *vswhere.Flag {
 	return &vswhere.Flag{
-		V2017: c.Bool("2017"),
-		V2019: c.Bool("2019"),
-		V2015: c.Bool("2015"),
-		V2013: c.Bool("2013"),
-		V2010: c.Bool("2010"),
+		V2019:      c.Bool("2019"),
+		V2017:      c.Bool("2017"),
+		V2015:      c.Bool("2015"),
+		V2013:      c.Bool("2013"),
+		V2010:      c.Bool("2010"),
+		SearchDesc: c.Bool("latest"),
 	}
 }
 
@@ -200,6 +201,10 @@ func mains() error {
 			&cli.BoolFlag{
 				Name:  "2019",
 				Usage: "use Visual Studio 2019",
+			},
+			&cli.BoolFlag{
+				Name:  "latest",
+				Usage: "search Visual Studio order by the version descending",
 			},
 			&cli.BoolFlag{
 				Name:  "w",

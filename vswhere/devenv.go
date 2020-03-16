@@ -11,11 +11,12 @@ import (
 )
 
 type Flag struct {
-	V2017 bool
-	V2019 bool
-	V2015 bool
-	V2013 bool
-	V2010 bool
+	V2017      bool
+	V2019      bool
+	V2015      bool
+	V2013      bool
+	V2010      bool
+	SearchDesc bool
 }
 
 func envToCom(envname string) (string, error) {
@@ -64,11 +65,20 @@ var versionToSeekfunc = map[string]func() (string, error){
 	"2019": seek2019,
 }
 
-var searchList = []func() (string, error){
-	seekLatest,
-	seek2015,
-	seek2013,
-	seek2010,
+var searchListAsc = []string{
+	"2010",
+	"2013",
+	"2015",
+	"2017",
+	"2019",
+}
+
+var searchListDesc = []string{
+	"2019",
+	"2017",
+	"2015",
+	"2013",
+	"2010",
 }
 
 var toolsVersionToRequiredVisualStudio = map[string]string{
@@ -148,8 +158,21 @@ func (flg Flag) SeekDevenv(sln *solution.Solution, log io.Writer) (compath strin
 		}
 	}
 
+	var searchList []string
+	if flg.SearchDesc {
+		searchList = searchListDesc
+	} else {
+		searchList = searchListAsc
+	}
 	// latest version
-	for _, f := range searchList {
+	for _, v := range searchList {
+		if requiredVisualStudio != "" && v < requiredVisualStudio {
+			continue
+		}
+		f, ok := versionToSeekfunc[v]
+		if !ok {
+			continue
+		}
 		compath, err = f()
 		if compath != "" && err == nil {
 			fmt.Fprintf(log, "found '%s'\n", compath)
