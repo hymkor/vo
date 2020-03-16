@@ -138,6 +138,9 @@ func build(c *cli.Context, action string) error {
 		return err
 	}
 	confs := seekConfig(c, sln.Solution)
+	if len(confs) <= 0 {
+		return run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, action)
+	}
 	for _, conf1 := range confs {
 		err = run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, action, conf1)
 		if err != nil {
