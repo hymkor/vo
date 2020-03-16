@@ -179,6 +179,7 @@ func mains() error {
 	}
 
 	app := &cli.App{
+		Usage: "Visual studio solution commandline Operator",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "2010",
@@ -211,33 +212,39 @@ func mains() error {
 		},
 		Commands: []*cli.Command{
 			{
-				Name: "showver",
-				Action: func(c *cli.Context) error {
-					for _, s := range c.Args().Slice() {
-						showVer(s, os.Stdout)
-					}
-					return nil
-				},
-			},
-			{
-				Name: "eval",
+				Name:  "ide",
+				Usage: "start visual-studio associated the solution with no options",
 				Action: func(c *cli.Context) error {
 					sln, err := seekOneSolution(context2flag(c), c.Args().Slice(), getVerboseOut(c))
 					if err != nil {
 						return err
 					}
-					for _, s := range c.Args().Slice() {
-						if !strings.HasSuffix(s, ".sln") {
-							if err := eval(sln.Solution, sln.DevenvPath, s); err != nil {
-								return fmt.Errorf("%s: %w", sln.SolutionPath, err)
-							}
-						}
+					err = run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath)
+					if err != nil {
+						return fmt.Errorf("%s: %w", sln.SolutionPath, err)
 					}
 					return nil
 				},
 			},
 			{
-				Name: "ls",
+				Name:  "build",
+				Usage: "call devenv.com associated the solution with /build option",
+				Flags: buildOptions,
+				Action: func(c *cli.Context) error {
+					return build(c, "/build")
+				},
+			},
+			{
+				Name:  "rebuild",
+				Usage: "call devenv.com associated the solution with /rebuild option",
+				Flags: buildOptions,
+				Action: func(c *cli.Context) error {
+					return build(c, "/rebuild")
+				},
+			},
+			{
+				Name:  "ls",
+				Usage: "list up executables inline",
 				Action: func(c *cli.Context) error {
 					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), getVerboseOut(c))
 					if err != nil {
@@ -258,7 +265,8 @@ func mains() error {
 				},
 			},
 			{
-				Name: "list",
+				Name:  "list",
+				Usage: "list up executables and thier version-information with long format",
 				Action: func(c *cli.Context) error {
 					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), getVerboseOut(c))
 					if err != nil {
@@ -274,31 +282,31 @@ func mains() error {
 				},
 			},
 			{
-				Name: "ide",
+				Name:  "showver",
+				Usage: "Show the version information for executables given by parameters",
 				Action: func(c *cli.Context) error {
-					sln, err := seekOneSolution(context2flag(c), c.Args().Slice(), getVerboseOut(c))
-					if err != nil {
-						return err
-					}
-					err = run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath)
-					if err != nil {
-						return fmt.Errorf("%s: %w", sln.SolutionPath, err)
+					for _, s := range c.Args().Slice() {
+						showVer(s, os.Stdout)
 					}
 					return nil
 				},
 			},
 			{
-				Name:  "build",
-				Flags: buildOptions,
+				Name:  "eval",
+				Usage: "eval the equation given by parameter",
 				Action: func(c *cli.Context) error {
-					return build(c, "/build")
-				},
-			},
-			{
-				Name:  "rebuild",
-				Flags: buildOptions,
-				Action: func(c *cli.Context) error {
-					return build(c, "/rebuild")
+					sln, err := seekOneSolution(context2flag(c), c.Args().Slice(), getVerboseOut(c))
+					if err != nil {
+						return err
+					}
+					for _, s := range c.Args().Slice() {
+						if !strings.HasSuffix(s, ".sln") {
+							if err := eval(sln.Solution, sln.DevenvPath, s); err != nil {
+								return fmt.Errorf("%s: %w", sln.SolutionPath, err)
+							}
+						}
+					}
+					return nil
 				},
 			},
 		},
