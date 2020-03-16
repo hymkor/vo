@@ -30,8 +30,7 @@ func run(dryrun bool, devenvPath string, param ...string) error {
 
 type TargetSolution struct {
 	*solution.Solution
-	SolutionPath string
-	DevenvPath   string
+	DevenvPath string
 }
 
 func seekSolutions(flags *vswhere.Flag, args []string, verbose io.Writer) ([]*TargetSolution, error) {
@@ -52,9 +51,8 @@ func seekSolutions(flags *vswhere.Flag, args []string, verbose io.Writer) ([]*Ta
 		}
 
 		targets = append(targets, &TargetSolution{
-			SolutionPath: slnPath,
-			DevenvPath:   devenvPath,
-			Solution:     sln,
+			DevenvPath: devenvPath,
+			Solution:   sln,
 		})
 	}
 	return targets, nil
@@ -74,7 +72,7 @@ func seekOneSolution(flags *vswhere.Flag, args []string, verbose io.Writer) (*Ta
 			if buffer.Len() > 0 {
 				buffer.WriteByte(' ')
 			}
-			buffer.WriteString(s.SolutionPath)
+			buffer.WriteString(s.Path)
 		}
 		return nil, fmt.Errorf("%s: too many solution files", buffer.String())
 	}
@@ -140,10 +138,10 @@ func build(c *cli.Context, action string) error {
 	}
 	confs := seekConfig(c, sln.Solution)
 	if len(confs) <= 0 {
-		return run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, action)
+		return run(c.Bool("n"), sln.DevenvPath, sln.Path, action)
 	}
 	for _, conf1 := range confs {
-		err = run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath, action, conf1)
+		err = run(c.Bool("n"), sln.DevenvPath, sln.Path, action, conf1)
 		if err != nil {
 			return err
 		}
@@ -224,9 +222,9 @@ func mains() error {
 					if err != nil {
 						return err
 					}
-					err = run(c.Bool("n"), sln.DevenvPath, sln.SolutionPath)
+					err = run(c.Bool("n"), sln.DevenvPath, sln.Path)
 					if err != nil {
-						return fmt.Errorf("%s: %w", sln.SolutionPath, err)
+						return fmt.Errorf("%s: %w", sln.Path, err)
 					}
 					return nil
 				},
@@ -258,7 +256,7 @@ func mains() error {
 					for i, sln := range slns {
 						err = listProductInline(sln.Solution, sln.DevenvPath, getWarningOut(c))
 						if err != nil {
-							return fmt.Errorf("%s: %w", sln.SolutionPath, err)
+							return fmt.Errorf("%s: %w", sln.Path, err)
 						}
 						if i == len(slns)-1 {
 							fmt.Println()
@@ -280,7 +278,7 @@ func mains() error {
 					for _, sln := range slns {
 						err := listProductLong(sln.Solution, sln.DevenvPath, getWarningOut(c))
 						if err != nil {
-							return fmt.Errorf("%s: %w", sln.SolutionPath, err)
+							return fmt.Errorf("%s: %w", sln.Path, err)
 						}
 					}
 					return nil
@@ -307,7 +305,7 @@ func mains() error {
 					for _, s := range c.Args().Slice() {
 						if !strings.HasSuffix(s, ".sln") {
 							if err := eval(sln.Solution, sln.DevenvPath, s); err != nil {
-								return fmt.Errorf("%s: %w", sln.SolutionPath, err)
+								return fmt.Errorf("%s: %w", sln.Path, err)
 							}
 						}
 					}
