@@ -106,7 +106,7 @@ func seekConfig(c *cli.Context, sln *solution.Solution) []string {
 	return confs
 }
 
-func warning(c *cli.Context) io.Writer {
+func getWarningOut(c *cli.Context) io.Writer {
 	w := ioutil.Discard
 	if c.Bool("w") {
 		w = os.Stderr
@@ -114,7 +114,7 @@ func warning(c *cli.Context) io.Writer {
 	return w
 }
 
-func verbose(c *cli.Context) io.Writer {
+func getVerboseOut(c *cli.Context) io.Writer {
 	v := ioutil.Discard
 	if c.Bool("v") {
 		v = os.Stderr
@@ -133,7 +133,7 @@ func context2flag(c *cli.Context) *vswhere.Flag {
 }
 
 func build(c *cli.Context, action string) error {
-	sln, err := seekOneSolution(context2flag(c), c.Args().Slice(), verbose(c))
+	sln, err := seekOneSolution(context2flag(c), c.Args().Slice(), getVerboseOut(c))
 	if err != nil {
 		return err
 	}
@@ -219,7 +219,7 @@ func mains() error {
 			{
 				Name: "eval",
 				Action: func(c *cli.Context) error {
-					sln, err := seekOneSolution(context2flag(c), c.Args().Slice(), verbose(c))
+					sln, err := seekOneSolution(context2flag(c), c.Args().Slice(), getVerboseOut(c))
 					if err != nil {
 						return err
 					}
@@ -236,12 +236,12 @@ func mains() error {
 			{
 				Name: "ls",
 				Action: func(c *cli.Context) error {
-					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), verbose(c))
+					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), getVerboseOut(c))
 					if err != nil {
 						return err
 					}
 					for i, sln := range slns {
-						err = listProductInline(sln.Solution, sln.DevenvPath, warning(c))
+						err = listProductInline(sln.Solution, sln.DevenvPath, getWarningOut(c))
 						if err != nil {
 							return fmt.Errorf("%s: %w", sln.SolutionPath, err)
 						}
@@ -257,12 +257,12 @@ func mains() error {
 			{
 				Name: "list",
 				Action: func(c *cli.Context) error {
-					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), verbose(c))
+					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), getVerboseOut(c))
 					if err != nil {
 						return err
 					}
 					for _, sln := range slns {
-						err := listProductLong(sln.Solution, sln.DevenvPath, warning(c))
+						err := listProductLong(sln.Solution, sln.DevenvPath, getWarningOut(c))
 						if err != nil {
 							return fmt.Errorf("%s: %w", sln.SolutionPath, err)
 						}
@@ -273,7 +273,7 @@ func mains() error {
 			{
 				Name: "ide",
 				Action: func(c *cli.Context) error {
-					sln, err := seekOneSolution(context2flag(c), c.Args().Slice(), verbose(c))
+					sln, err := seekOneSolution(context2flag(c), c.Args().Slice(), getVerboseOut(c))
 					if err != nil {
 						return err
 					}
