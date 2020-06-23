@@ -182,5 +182,21 @@ func (flg Flag) SeekDevenv(sln *solution.Solution, log io.Writer) (compath strin
 			fmt.Fprintln(log, err)
 		}
 	}
+
+	// Use the version specified by the solution file and ignore project files
+	if f := versionToSeekfunc[sln.DefaultVersion]; f != nil {
+		fmt.Fprintf(log, "%s: use default version: %s\n", sln.Path, sln.DefaultVersion)
+		compath, err = f()
+		if compath != "" && err == nil {
+			return
+		}
+	}
+	if f := versionToSeekfunc[sln.MinimumVersion]; f != nil {
+		fmt.Fprintf(log, "%s: use minimum version: %s\n", sln.Path, sln.MinimumVersion)
+		compath, err = f()
+		if compath != "" && err == nil {
+			return
+		}
+	}
 	return "", io.EOF
 }
