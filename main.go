@@ -106,7 +106,7 @@ func seekConfig(c *cli.Context, sln *solution.Solution) []string {
 
 func getWarningOut(c *cli.Context) io.Writer {
 	w := ioutil.Discard
-	if c.Bool("w") {
+	if c.Bool("w") || globalFlagWarning {
 		w = os.Stderr
 	}
 	return w
@@ -114,7 +114,7 @@ func getWarningOut(c *cli.Context) io.Writer {
 
 func getVerboseOut(c *cli.Context) io.Writer {
 	v := ioutil.Discard
-	if c.Bool("v") {
+	if c.Bool("v") || globalFlagVerbose {
 		v = os.Stderr
 	}
 	return v
@@ -122,12 +122,12 @@ func getVerboseOut(c *cli.Context) io.Writer {
 
 func context2flag(c *cli.Context) *vswhere.Flag {
 	return &vswhere.Flag{
-		V2019:      c.Bool("2019"),
-		V2017:      c.Bool("2017"),
-		V2015:      c.Bool("2015"),
-		V2013:      c.Bool("2013"),
-		V2010:      c.Bool("2010"),
-		SearchDesc: c.Bool("latest"),
+		V2019:      c.Bool("2019") || globalFlag2019,
+		V2017:      c.Bool("2017") || globalFlag2017,
+		V2015:      c.Bool("2015") || globalFlag2015,
+		V2013:      c.Bool("2013") || globalFlag2013,
+		V2010:      c.Bool("2010") || globalFlag2010,
+		SearchDesc: c.Bool("latest") || globalFlagLatest,
 	}
 }
 
@@ -149,7 +149,61 @@ func build(c *cli.Context, action string) error {
 	return nil
 }
 
+var (
+	globalFlag2010    = false
+	globalFlag2013    = false
+	globalFlag2015    = false
+	globalFlag2017    = false
+	globalFlag2019    = false
+	globalFlagLatest  = false
+	globalFlagWarning = false
+	globalFlagVerbose = false
+)
+
 func mains() error {
+	globalFlags := []cli.Flag{
+		&cli.BoolFlag{
+			Name:        "2010",
+			Usage:       "use Visual Studio 2010",
+			Destination: &globalFlag2010,
+		},
+		&cli.BoolFlag{
+			Name:        "2013",
+			Usage:       "use Visual Studio 2013",
+			Destination: &globalFlag2013,
+		},
+		&cli.BoolFlag{
+			Name:        "2015",
+			Usage:       "use Visual Studio 2015",
+			Destination: &globalFlag2015,
+		},
+		&cli.BoolFlag{
+			Name:        "2017",
+			Usage:       "use Visual Studio 2017",
+			Destination: &globalFlag2017,
+		},
+		&cli.BoolFlag{
+			Name:        "2019",
+			Usage:       "use Visual Studio 2019",
+			Destination: &globalFlag2019,
+		},
+		&cli.BoolFlag{
+			Name:        "latest",
+			Usage:       "search Visual Studio order by the version descending",
+			Destination: &globalFlagLatest,
+		},
+		&cli.BoolFlag{
+			Name:        "w",
+			Usage:       "show warnings",
+			Destination: &globalFlagWarning,
+		},
+		&cli.BoolFlag{
+			Name:        "v",
+			Usage:       "verbose",
+			Destination: &globalFlagVerbose,
+		},
+	}
+
 	buildOptions := []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "n",
@@ -177,42 +231,18 @@ func mains() error {
 		},
 	}
 
+	for _, f := range globalFlags {
+		if bf, ok := f.(*cli.BoolFlag); ok {
+			buildOptions = append(buildOptions, &cli.BoolFlag{
+				Name:  bf.Name,
+				Usage: bf.Usage,
+			})
+		}
+	}
+
 	app := &cli.App{
 		Usage: "Visual studio solution commandline Operator",
-		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:  "2010",
-				Usage: "use Visual Studio 2010",
-			},
-			&cli.BoolFlag{
-				Name:  "2013",
-				Usage: "use Visual Studio 2013",
-			},
-			&cli.BoolFlag{
-				Name:  "2015",
-				Usage: "use Visual Studio 2015",
-			},
-			&cli.BoolFlag{
-				Name:  "2017",
-				Usage: "use Visual Studio 2017",
-			},
-			&cli.BoolFlag{
-				Name:  "2019",
-				Usage: "use Visual Studio 2019",
-			},
-			&cli.BoolFlag{
-				Name:  "latest",
-				Usage: "search Visual Studio order by the version descending",
-			},
-			&cli.BoolFlag{
-				Name:  "w",
-				Usage: "show warnings",
-			},
-			&cli.BoolFlag{
-				Name:  "v",
-				Usage: "verbose",
-			},
-		},
+		Flags: globalFlags,
 		Commands: []*cli.Command{
 			{
 				Name:  "ide",
