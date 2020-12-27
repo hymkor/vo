@@ -33,7 +33,7 @@ type TargetSolution struct {
 	DevenvPath string
 }
 
-func seekSolutions(flags *vswhere.Flag, args []string, verbose io.Writer) ([]*TargetSolution, error) {
+func seekSolutions(flags *vswhere.Flag, args []string, verbose io.Writer, mustHaveDevenv bool) ([]*TargetSolution, error) {
 	slnPaths, err := solution.Find(args)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func seekSolutions(flags *vswhere.Flag, args []string, verbose io.Writer) ([]*Ta
 		}
 
 		devenvPath, err := flags.SeekDevenv(sln, verbose)
-		if err != nil {
+		if err != nil && mustHaveDevenv {
 			return nil, fmt.Errorf("%s: devenv.com not found", slnPath)
 		}
 
@@ -59,7 +59,7 @@ func seekSolutions(flags *vswhere.Flag, args []string, verbose io.Writer) ([]*Ta
 }
 
 func seekOneSolution(flags *vswhere.Flag, args []string, verbose io.Writer) (*TargetSolution, error) {
-	slns, err := seekSolutions(flags, args, verbose)
+	slns, err := seekSolutions(flags, args, verbose, true)
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +279,7 @@ func mains() error {
 				Name:  "ls",
 				Usage: "list up expected executables inline",
 				Action: func(c *cli.Context) error {
-					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), getVerboseOut(c))
+					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), getVerboseOut(c), false)
 					if err != nil {
 						return err
 					}
@@ -301,7 +301,7 @@ func mains() error {
 				Name:  "list",
 				Usage: "list up existing executables and thier version-information with long format",
 				Action: func(c *cli.Context) error {
-					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), getVerboseOut(c))
+					slns, err := seekSolutions(context2flag(c), c.Args().Slice(), getVerboseOut(c), false)
 					if err != nil {
 						return err
 					}
