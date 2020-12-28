@@ -141,12 +141,17 @@ func showVer(fname string, w io.Writer) {
 	}
 }
 
-func listProductLong(sln *solution.Solution, devenvPath string, warning io.Writer) error {
+func listProductLong(uniq map[string]struct{}, sln *solution.Solution, devenvPath string, warning io.Writer) error {
 	projToConfigToProduct, err := listupProduct(sln, devenvPath, warning)
 	if err != nil {
 		return err
 	}
 	for proj, configToProduct := range projToConfigToProduct {
+		if _, ok := uniq[proj]; ok {
+			continue
+		}
+		uniq[proj] = struct{}{}
+
 		var buffer strings.Builder
 
 		fmt.Fprintf(&buffer, "%s:\n", proj)

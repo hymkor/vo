@@ -305,8 +305,9 @@ func mains() error {
 					if err != nil {
 						return err
 					}
+					uniq := make(map[string]struct{})
 					for _, sln := range slns {
-						err := listProductLong(sln.Solution, sln.DevenvPath, getWarningOut(c))
+						err := listProductLong(uniq, sln.Solution, sln.DevenvPath, getWarningOut(c))
 						if err != nil {
 							return fmt.Errorf("%s: %w", sln.Path, err)
 						}
