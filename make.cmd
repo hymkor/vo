@@ -1,5 +1,8 @@
 @echo off
+setlocal
+for /F %%I in ('cd') do set "NAME=%%~nI"
 call :"%1"
+endlocal
 exit /b
 
 :""
@@ -11,8 +14,7 @@ exit /b
     exit /b
 
 :"install"
-    for /F %%I in ('cd') do set "EXE=%%~nI.exe"
-    for /F "skip=1" %%I in ('where %EXE%') do call :copy "%EXE%" "%%I"
+    for /F "skip=1" %%I in ('where "%NAME%.exe"') do call :copy "%NAME%.exe" "%%I"
     exit /b
 
 :copy
@@ -22,4 +24,9 @@ exit /b
     copy "%~1" "%~2" >nul
 :copydone
     echo %1 to %2
+    exit /b
+
+:"package"
+    set /P "VER=Version ? "
+    zip "%NAME%-%VER%-windows-386.zip" "%NAME%.exe"
     exit /b
