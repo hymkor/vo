@@ -115,11 +115,19 @@ func listProductInline(sln *solution.Solution, devenvPath string, warning io.Wri
 	if err != nil {
 		return err
 	}
+	uniq := make(map[string]struct{})
 	ofs := ""
 	for _, configToProduct := range projToConfigToProduct {
 		for _, s := range configToProduct {
-			fmt.Printf(`%s"%s"`, ofs, s)
-			ofs = "\t"
+			if _, ok := uniq[s]; !ok {
+				if strings.ContainsRune(s, ' ') {
+					fmt.Printf(`%s"%s"`, ofs, s)
+				} else {
+					fmt.Print(ofs, s)
+				}
+				ofs = " "
+				uniq[s] = struct{}{}
+			}
 		}
 	}
 	return nil
