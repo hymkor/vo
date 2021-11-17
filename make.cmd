@@ -1,4 +1,4 @@
-@echo off
+rem @echo off
 setlocal
 for /F %%I in ('cd') do set "NAME=%%~nI"
 call :"%1"
@@ -8,8 +8,8 @@ exit /b
 :""
     setlocal
     set GOARCH=386
-    go fmt
-    go build
+    for /D %%I in (internal\*) do pushd "%%~I" & go fmt & popd "%%~I"
+    pushd cmd\vo & go fmt && go build & popd
     endlocal
     exit /b
 
