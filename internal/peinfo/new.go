@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -78,18 +79,25 @@ func (spec *ExeSpec) WriteTo(w io.Writer) (int64, error) {
 		return int64(n1), err
 	}
 
-	var bit string
-	if spec.Is64bit {
-		bit = " (64)"
-	}
+	var second strings.Builder
 
-	n2, err := fmt.Fprintf(w, "\t%-18s%-18s%-18s%s\n",
-		spec.FileVersion,
-		spec.ProductVersion,
-		spec.Stamp.Format("2006-01-02 15:04:05"),
-		bit)
-	if err != nil {
-		return int64(n1 + n2), err
+	if spec.FileVersion != "" || spec.ProductVersion != "" {
+		fmt.Fprintf(&second, "%-18s%-18s",
+			spec.FileVersion,
+			spec.ProductVersion)
+	}
+	if !spec.Stamp.IsZero() && spec.Stamp != time.Unix(0, 0) {
+		fmt.Fprintf(&second, "%-18s", spec.Stamp.Format("2006-01-02 15:04:05"))
+	}
+	if spec.Is64bit {
+		io.WriteString(&second, " (64)")
+	}
+	n2 := 0
+	if second.Len() > 0 {
+		n2, err = fmt.Fprintf(w, "\t%s\n", second.String())
+		if err != nil {
+			return int64(n1 + n2), err
+		}
 	}
 	n3, err := fmt.Fprintf(w, "\t%d bytes  md5sum:%s\n", spec.Size, spec.Md5Sum)
 	return int64(n1 + n2 + n3), err
