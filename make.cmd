@@ -27,6 +27,6 @@ exit /b
     exit /b
 
 :"package"
-    set /P "VER=Version ? "
-    zip "%NAME%-%VER%-windows-386.zip" "%NAME%.exe"
+    for /F %%I in ('git describe --tags') do set "VER=%%~I"
+    zip -j "%NAME%-%VER%-windows-386.zip" "cmd\vo\vo.exe"
     exit /b
