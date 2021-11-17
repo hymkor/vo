@@ -286,7 +286,8 @@ func mains() error {
 					for i, sln := range slns {
 						err = listProductInline(sln.Solution, sln.DevenvPath, getWarningOut(c))
 						if err != nil {
-							return fmt.Errorf("%s: %w", sln.Path, err)
+							fmt.Fprintf(os.Stderr, "%s: %w", sln.Path, err)
+							continue
 						}
 						if i == len(slns)-1 {
 							fmt.Println()

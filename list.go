@@ -61,7 +61,8 @@ func getProjToConfigToProps(sln *solution.Solution, devenvPath string, warning i
 			}
 			err := props.LoadProject(projPath, warning)
 			if err != nil {
-				return nil, err
+				continue
+				// return nil, err
 			}
 			configToProps[configuration] = props
 		}
