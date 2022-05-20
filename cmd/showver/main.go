@@ -8,7 +8,7 @@ import (
 
 	_ "github.com/mattn/getwild"
 
-	"github.com/zetamatta/vo/internal/peinfo"
+	"github.com/hymkor/vo/internal/peinfo"
 )
 
 var (

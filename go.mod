@@ -1,4 +1,4 @@
-module github.com/zetamatta/vo
+module github.com/hymkor/vo
 
 go 1.14
 

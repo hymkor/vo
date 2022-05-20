@@ -12,8 +12,8 @@ import (
 	_ "github.com/mattn/getwild"
 	"github.com/urfave/cli/v2"
 
-	"github.com/zetamatta/vo/internal/solution"
-	"github.com/zetamatta/vo/internal/vswhere"
+	"github.com/hymkor/vo/internal/solution"
+	"github.com/hymkor/vo/internal/vswhere"
 )
 
 func run(dryrun bool, devenvPath string, param ...string) error {

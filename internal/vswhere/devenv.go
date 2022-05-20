@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/zetamatta/vo/internal/solution"
+	"github.com/hymkor/vo/internal/solution"
 )
 
 type Flag struct {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/zetamatta/vo/internal/solution"
+	"github.com/hymkor/vo/internal/solution"
 )
 
 func eval(sln *solution.Solution, devenvPath, varname string) error {
