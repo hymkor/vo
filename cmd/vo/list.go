@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/hymkor/go-sortedkeys"
+
 	"github.com/hymkor/vo/internal/peinfo"
 	"github.com/hymkor/vo/internal/projs"
 	"github.com/hymkor/vo/internal/solution"
@@ -147,7 +149,9 @@ func listProductLong(uniq map[string]struct{}, sln *solution.Solution, devenvPat
 	if err != nil {
 		return err
 	}
-	for proj, configToProduct := range projToConfigToProduct {
+	for pair1 := sortedkeys.New(projToConfigToProduct); pair1.Range(); {
+		proj := pair1.Key
+		configToProduct := pair1.Value
 		if _, ok := uniq[proj]; ok {
 			continue
 		}
@@ -156,7 +160,9 @@ func listProductLong(uniq map[string]struct{}, sln *solution.Solution, devenvPat
 		var buffer strings.Builder
 
 		fmt.Fprintf(&buffer, "%s:\n", proj)
-		for config, fname := range configToProduct {
+		for pair2 := sortedkeys.New(configToProduct); pair2.Range(); {
+			config := pair2.Key
+			fname := pair2.Value
 			if fd, err := os.Open(fname); err == nil {
 				fd.Close()
 				fmt.Print(buffer.String())
