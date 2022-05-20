@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"sort"
 	"strings"
 
 	_ "github.com/mattn/getwild"
@@ -283,6 +284,9 @@ func mains() error {
 					if err != nil {
 						return err
 					}
+					sort.Slice(slns, func(i, j int) bool {
+						return slns[i].Path < slns[j].Path
+					})
 					for i, sln := range slns {
 						err = listProductInline(sln.Solution, sln.DevenvPath, getWarningOut(c))
 						if err != nil {
@@ -307,6 +311,9 @@ func mains() error {
 						return err
 					}
 					uniq := make(map[string]struct{})
+					sort.Slice(slns, func(i, j int) bool {
+						return slns[i].Path < slns[j].Path
+					})
 					for _, sln := range slns {
 						err := listProductLong(uniq, sln.Solution, sln.DevenvPath, getWarningOut(c))
 						if err != nil {
