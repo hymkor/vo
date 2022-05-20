@@ -149,6 +149,7 @@ func listProductLong(uniq map[string]struct{}, sln *solution.Solution, devenvPat
 	if err != nil {
 		return err
 	}
+	fmt.Printf("%s:\n", sln.Path)
 	for pair1 := sortedkeys.New(projToConfigToProduct); pair1.Range(); {
 		proj := pair1.Key
 		configToProduct := pair1.Value
@@ -159,7 +160,7 @@ func listProductLong(uniq map[string]struct{}, sln *solution.Solution, devenvPat
 
 		var buffer strings.Builder
 
-		fmt.Fprintf(&buffer, "%s:\n", proj)
+		fmt.Fprintf(&buffer, "  %s:\n", proj)
 		for pair2 := sortedkeys.New(configToProduct); pair2.Range(); {
 			config := pair2.Key
 			fname := pair2.Value
@@ -167,7 +168,7 @@ func listProductLong(uniq map[string]struct{}, sln *solution.Solution, devenvPat
 				fd.Close()
 				fmt.Print(buffer.String())
 				buffer.Reset()
-				fmt.Printf("  %s:\n    ", config)
+				fmt.Printf("    %s:\n      ", config)
 				showVer(fname, os.Stdout)
 			}
 		}
