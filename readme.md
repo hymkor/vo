@@ -103,15 +103,16 @@ Show files multi-line with some information.
 
 ```
 $ vo list
-WorkReport.csproj:
-  Release|x86:
-    bin\Release\WorkReport.exe
-        1.0.0.16          1.0.0.16          2020-03-16 11:42:44
-        50688 bytes  md5sum:1fcbf90db2a4824cac4aa8e936f94ce6
-  Debug|x86:
-    bin\Debug\WorkReport.exe
-        1.0.0.16          1.0.0.16          2020-03-16 11:43:59
-        53760 bytes  md5sum:4802019ffd5d9b1f93cb21ac77f1546d
+WorkReport.sln:
+  WorkReport.csproj:
+    Debug|x86:
+      bin\Debug\WorkReport.exe
+        3.0.0.1           3.0.0.1           2022-05-16 18:42:26
+        66560 bytes  md5sum:9c4d0d5b243e60ff51784174117dcca5
+    Release|x86:
+      bin\Release\WorkReport.exe
+        3.0.1.0           3.0.1.0           2022-05-16 18:47:24
+        61952 bytes  md5sum:3443f47a1ba2c66bcc85116a8f8a3009
 ```
 
 These files are built by the solution files in the current directory.
