@@ -310,17 +310,9 @@ func mains() error {
 					if err != nil {
 						return err
 					}
-					uniq := make(map[string]struct{})
-					sort.Slice(slns, func(i, j int) bool {
-						return slns[i].Path < slns[j].Path
-					})
-					for _, sln := range slns {
-						err := listProductLong(uniq, sln.Solution, sln.DevenvPath, getWarningOut(c))
-						if err != nil {
-							return fmt.Errorf("%s: %w", sln.Path, err)
-						}
-					}
-					return nil
+					projs := solutionsToAllProjects(slns, getWarningOut(c))
+
+					return listProductLong(projs)
 				},
 			},
 			{
