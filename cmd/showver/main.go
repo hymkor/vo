@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	_ "github.com/mattn/getwild"
+	"path/filepath"
 
 	"github.com/hymkor/vo/internal/peinfo"
 )
@@ -21,7 +21,21 @@ var (
 	flagOneLinear   = flag.Bool("1", false, "show one line")
 )
 
+func globs(patterns []string) []string {
+	result := make([]string, 0, len(patterns))
+	for _, s := range patterns {
+		matches, err := filepath.Glob(s)
+		if err != nil {
+			result = append(result, s)
+		} else {
+			result = append(result, matches...)
+		}
+	}
+	return result
+}
+
 func mains(args []string) error {
+	args = globs(args)
 	sep := ""
 	for _, fname := range args {
 		info := peinfo.New(fname)
