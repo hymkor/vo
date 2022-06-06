@@ -18,6 +18,7 @@ var (
 	flagMd5Sum      = flag.Bool("md5", false, "show md5sum")
 	flagSize        = flag.Bool("size", false, "show size")
 	flag64bit       = flag.Bool("bit", false, "show 64 if 64 bit executable")
+	flagOneLinear   = flag.Bool("1", false, "show one line")
 )
 
 func mains(args []string) error {
@@ -43,6 +44,11 @@ func mains(args []string) error {
 			if info.Is64bit {
 				fmt.Println("64")
 			}
+		} else if *flagOneLinear {
+			fmt.Printf("%s\t%s\t%s\n",
+				fname,
+				info.FileVersion,
+				info.Md5Sum)
 		} else {
 			io.WriteString(os.Stdout, sep)
 			info.WriteTo(os.Stdout)
