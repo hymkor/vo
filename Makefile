@@ -24,4 +24,4 @@ package:
 
 manifest:
 	make-scoop-manifest vo*-windows-*.zip > vo.json
-	make-scoop-manifest showver*-windows-*.zip > showver.json
+	make-scoop-manifest --inline "{ \"description\": \"Show the version number , timestamp and MD5SUM of Windows Executables\" }" showver*-windows-*.zip > showver.json
