@@ -16,7 +16,7 @@ all:
 
 _package:
 	$(MAKE) all
-	$(foreach X,$(wildcard cmd/*),zip $(notdir $(X))-$(VERSION)-$(GOOS)-$(GOARCH).zip $(NAME)$(GOEXE) && ) :
+	$(foreach X,$(wildcard cmd/*),zip $(notdir $(X))-$(VERSION)-$(GOOS)-$(GOARCH).zip $(notdir $(X))$(GOEXE) && ) :
 
 package:
 	$(SET) "GOOS=windows" && $(SET) "GOARCH=386"   && $(MAKE) _package
