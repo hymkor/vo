@@ -33,6 +33,24 @@ GLOBAL OPTIONS:
    --help, -h  show help (default: false)
 ```
 
+Install
+=======
+
+Download the binary package from [Releases](https://github.com/hymkor/vo/releases) and extract the executable.
+
+## for scoop-installer
+
+```
+scoop install https://raw.githubusercontent.com/hymkor/vo/master/vo.json
+```
+
+or
+
+```
+scoop bucket add hymkor https://github.com/hymkor/scoop-bucket
+scoop install vo
+```
+
 Build projects
 ==============
 
