@@ -1,4 +1,4 @@
-`vo.exe` reads `*.sln` and `*.*proj` files in the current directory, finds the appropriate devenv.com's fullpath and calls it for these purpose.
+Vo.exe is a command line client that reads \*.sln and \*.\*proj files and invokes the appropriate version in environments where multiple versions of Visual Studio are installed.
 
 - Start Visual Studio (`vo ide`)
 - Build the application (`vo build`)
